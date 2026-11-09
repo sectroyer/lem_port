@@ -2,6 +2,7 @@
 #include "adlib.h"
 
 #include <algorithm>
+#include <deque>
 
 #include "graphicset.h"
 #include "x86.h"
@@ -23,7 +24,17 @@ struct AdlibDriver::Impl {
     Cpu8086 cpu;
     OplInterface intf;
     ymfm::ym3812 opl{intf};
-    uint8_t address = 0;
+    // Samples produced while the driver runs. The driver waits after every
+    // data write (36 status reads, a little over one chip sample); the chip
+    // keeps running meanwhile, so a note switched off and on again in the
+    // same tick is really released and restarted.
+    std::deque<int16_t> pending;
+
+    int16_t clockOne() {
+        ymfm::ym3812::output_data od;
+        opl.generate(&od, 1);
+        return int16_t(std::clamp(od.data[0], -32768, 32767));
+    }
 };
 
 AdlibDriver::AdlibDriver(const Bytes& image) : impl_(std::make_unique<Impl>()) {
@@ -32,8 +43,12 @@ AdlibDriver::AdlibDriver(const Bytes& image) : impl_(std::make_unique<Impl>()) {
     m.opl.reset();
     sampleRate_ = int(m.opl.sample_rate(kOplClock));
     m.cpu.out = [&m](uint16_t port, uint8_t v) {
-        if (port == 0x388) m.opl.write_address(v);
-        else if (port == 0x389) m.opl.write_data(v);
+        if (port == 0x388) {
+            m.opl.write_address(v);
+        } else if (port == 0x389) {
+            m.opl.write_data(v);
+            m.pending.push_back(m.clockOne());
+        }
     };
     m.cpu.in = [&m](uint16_t port) -> uint8_t {
         return port == 0x388 ? m.opl.read_status() : 0xFF;
@@ -78,16 +93,20 @@ void AdlibDriver::playMusic(int track) {
 void AdlibDriver::stop() { call(2); }
 
 void AdlibDriver::generate(int16_t* out, int frames) {
-    ymfm::ym3812::output_data od;
+    Impl& m = *impl_;
     const double ticksPerSample = kTickHz / sampleRate_;
-    for (int i = 0; i < frames; ++i) {
+    for (int i = 0; i < frames;) {
         tickPhase_ += ticksPerSample;
-        if (tickPhase_ >= 1.0) {
+        if (m.pending.empty() && tickPhase_ >= 1.0) {
             tickPhase_ -= 1.0;
             call(0);
         }
-        impl_->opl.generate(&od, 1);
-        out[i] = int16_t(std::clamp(od.data[0], -32768, 32767));
+        if (!m.pending.empty()) {
+            out[i++] = m.pending.front();
+            m.pending.pop_front();
+        } else {
+            out[i++] = m.clockOne();
+        }
     }
 }
 
