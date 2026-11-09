@@ -5,6 +5,7 @@
 
 #include "dat.h"
 #include "level.h"
+#include "password.h"
 
 using namespace lem;
 
@@ -66,7 +67,25 @@ static void testLevelParse() {
     CHECK(L.name == "Hi");
 }
 
+static void testPasswords() {
+    // A code from the original game: Fun 2 after rescuing 100% on Fun 1.
+    auto d = decodeAccessCode("IJJLDNCCCN");
+    CHECK(d && d->level == 1 && d->percent == 100 && d->flags == 8);
+    CHECK(decodeAccessCode("ijjldncccn").has_value());
+    CHECK(!decodeAccessCode("IJJLDNCCCM"));   // bad checksum
+    CHECK(!decodeAccessCode("ABCDEFGHIJ"));
+    for (int level = 0; level < 120; ++level)
+        for (int flags : {0, 5, 15})
+            for (int pct : {0, 37, 100}) {
+                std::string code = encodeAccessCode({level, pct, flags});
+                auto r = decodeAccessCode(code);
+                CHECK(r && r->level == level && r->flags == flags && r->percent == pct);
+            }
+    CHECK(isCheatCode("billandted"));
+}
+
 int main() {
+    testPasswords();
     testStoredRoundTrip();
     testReferenceExample();
     testLevelParse();
