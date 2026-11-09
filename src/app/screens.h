@@ -101,6 +101,7 @@ private:
     Audio audio_;
     bool audioOk_ = false;
     int lastNukeFrame_ = -100;
+    int lastTimeTapFrame_ = -100;   // double tap on TIME toggles fast forward
     // Main menu animation, run at the 70 Hz display rate of the menu screens.
     struct Blink { int counter, reload, x, y, graphic; };
     std::vector<Blink> blinks_;

@@ -366,6 +366,17 @@ void Frontend::playClick(int x, int y, bool right, bool dbl) {
         scrollX_ = std::clamp((x - 208) * 16 - kPlayW / 2, 0, kLevelWidth - kPlayW);
         return;
     }
+    // Double tap on the TIME part of the status line toggles fast forward
+    // (there is no keyboard on touch screens).
+    if (py < 16 && x >= 31 * 8) {
+        if (frameCounter_ - lastTimeTapFrame_ <= 7) {
+            fast_ = !fast_;
+            lastTimeTapFrame_ = -100;
+        } else {
+            lastTimeTapFrame_ = frameCounter_;
+        }
+        return;
+    }
     if (py < 16 || x >= BtnCount * 16) return;
     int b = x / 16;
     switch (b) {
@@ -698,7 +709,7 @@ void Frontend::drawHelp() {
         "F3-F10 or 1-8     Select skill",
         "F1 F2 or - +      Release rate",
         "P or F11          Pause",
-        "F                 Fast forward",
+        "F or 2x tap TIME  Fast forward",
         "F12 twice         Nuke",
         "Arrows or edges   Scroll",
         "Right button      Prefer walkers",

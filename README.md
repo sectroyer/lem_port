@@ -66,7 +66,7 @@ On first start without `--data`, a folder picker asks for the data folder.
 | F1 / F2, − / + | release rate down / up |
 | F11, P | pause |
 | Double-click nuke, F12 | nuke |
-| F | fast forward |
+| F, double click on TIME | fast forward |
 | M / X | music / sound effects on or off |
 | Arrow keys, mouse at screen edge, minimap | scroll |
 | Hold right button | prefer walking lemmings when assigning |
