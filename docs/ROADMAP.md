@@ -3,8 +3,8 @@
 Goal: a native, self-contained engine for DOS Lemmings that reads the
 original data files from a user-chosen folder. No emulator involved.
 
-Targets: macOS/Linux/Windows desktop first, then browser (WebAssembly) and
-iOS/iPadOS. The engine core has no platform dependencies; SDL3 provides
+Targets: Linux and macOS desktop first, then iOS/iPadOS, the browser
+(WebAssembly) and Windows. The engine core has no platform dependencies; SDL3 provides
 window, input and audio on every target.
 
 ## Phase 1 – Data files
