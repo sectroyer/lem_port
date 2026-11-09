@@ -8,7 +8,6 @@
 #include <cstdio>
 #include <cstdlib>
 #include <cstring>
-#include <filesystem>
 #include <memory>
 #include <string>
 
@@ -47,8 +46,8 @@ std::string absolutePath(const std::string& p) {
 }
 
 bool isDataDir(const std::string& dir) {
-    return !dir.empty() && std::filesystem::exists(joinPath(dir, "main.dat")) &&
-           std::filesystem::exists(joinPath(dir, "level000.dat"));
+    return !dir.empty() && fileExists(joinPath(dir, "main.dat")) &&
+           fileExists(joinPath(dir, "level000.dat"));
 }
 
 void startGame(App& app) {

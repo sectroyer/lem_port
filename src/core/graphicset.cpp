@@ -3,7 +3,6 @@
 
 #include <algorithm>
 #include <cctype>
-#include <filesystem>
 #include <stdexcept>
 
 namespace lem {
@@ -30,23 +29,6 @@ std::array<Rgb, 8> readEga(const uint8_t* p) {
 }
 
 } // namespace
-
-std::string joinPath(const std::string& dir, const std::string& file) {
-    namespace fs = std::filesystem;
-    fs::path p = fs::path(dir) / file;
-    if (fs::exists(p)) return p.string();
-    // Data copied from old media is often upper case; match case-insensitively.
-    std::error_code ec;
-    for (const auto& e : fs::directory_iterator(dir, ec)) {
-        std::string a = e.path().filename().string(), b = file;
-        if (a.size() != b.size()) continue;
-        bool eq = true;
-        for (size_t i = 0; i < a.size() && eq; ++i)
-            eq = std::tolower(uint8_t(a[i])) == std::tolower(uint8_t(b[i]));
-        if (eq) return e.path().string();
-    }
-    return p.string();
-}
 
 int ObjectInfo::previewFrameIndex() const {
     if (frames.empty() || frameSize == 0 || previewLoc < baseLoc) return 0;

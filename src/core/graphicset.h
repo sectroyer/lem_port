@@ -65,6 +65,8 @@ std::vector<Bytes> decodeSpecialRle(const Bytes& src, size_t offset);
 // half, colour 7 duplicating colour 8.
 Palette levelPalette(const std::array<Rgb, 8>& upper);
 
+// Path of `file` inside `dir`, matching the name case-insensitively.
 std::string joinPath(const std::string& dir, const std::string& file);
+bool fileExists(const std::string& path);
 
 } // namespace lem
