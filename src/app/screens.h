@@ -14,6 +14,7 @@
 #include "levelrender.h"
 #include "maindat.h"
 #include "password.h"
+#include "audio.h"
 
 namespace lem {
 
@@ -25,6 +26,7 @@ constexpr int kScreenH = 400;
 class Frontend {
 public:
     explicit Frontend(const std::string& dataDir, int rating = 0, int level = 0);
+    ~Frontend();
     // Returns false when the user wants to quit.
     bool handleEvent(const SDL_Event& ev);
     void update();                         // one 60 ms frame
@@ -84,6 +86,9 @@ private:
     int mouseX_ = 0, mouseY_ = 0; // canvas coordinates
     bool rightDown_ = false;
     int frameCounter_ = 0;
+    int musicCounter_ = 0;          // advances through the music list per new level
+    Audio audio_;
+    bool audioOk_ = false;
     int lastNukeFrame_ = -100;   // the nuke needs two presses within 5 frames
     bool rrFromKeyboard_ = false;
     GameResult result_{};

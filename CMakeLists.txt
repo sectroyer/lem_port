@@ -26,8 +26,20 @@ add_library(lemcore STATIC
   src/core/levelpack.cpp
   src/core/game.cpp
   src/core/password.cpp
+  src/core/x86.cpp
+  src/core/adlib.cpp
 )
 target_include_directories(lemcore PUBLIC src/core)
+
+# Third-party: ymfm (BSD-3-Clause) for the OPL2 FM chip.
+add_library(ymfm STATIC
+  third_party/ymfm/ymfm_opl.cpp
+  third_party/ymfm/ymfm_adpcm.cpp
+  third_party/ymfm/ymfm_pcm.cpp
+)
+target_include_directories(ymfm PUBLIC third_party/ymfm)
+target_compile_options(ymfm PRIVATE $<$<NOT:$<CXX_COMPILER_ID:MSVC>>:-w>)
+target_link_libraries(lemcore PUBLIC ymfm)
 
 add_executable(lemtool src/tools/lemtool.cpp src/tools/png.cpp)
 target_link_libraries(lemtool PRIVATE lemcore)
@@ -38,6 +50,7 @@ if(LEM_BUILD_APP)
     src/app/main.cpp
     src/app/config.cpp
     src/app/screens.cpp
+    src/app/audio.cpp
   )
   target_link_libraries(lem_port PRIVATE lemcore SDL3::SDL3)
 endif()

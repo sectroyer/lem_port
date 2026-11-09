@@ -1,7 +1,9 @@
 // SPDX-License-Identifier: GPL-3.0-or-later
 // Command line utility for inspecting and exporting original game data.
 #include <cstdio>
+#include <cmath>
 #include <cstdlib>
+#include <memory>
 #include <cstring>
 #include <filesystem>
 #include <string>
@@ -13,6 +15,7 @@
 #include "maindat.h"
 #include "levelpack.h"
 #include "game.h"
+#include "adlib.h"
 #include "png.h"
 
 using namespace lem;
@@ -268,6 +271,38 @@ int cmdSim(int argc, char** argv) {
     return 0;
 }
 
+// Renders a music track or a sound effect of the AdLib driver to a WAV file.
+int cmdAudio(int argc, char** argv) {
+    if (argc < 6) {
+        std::fprintf(stderr, "usage: lemtool audio <datadir> <music|sfx> <number> <out.wav> [seconds]\n");
+        return 1;
+    }
+    std::unique_ptr<AdlibDriver> drv(AdlibDriver::load(argv[2]));
+    if (!drv) { std::fprintf(stderr, "cannot load adlib.dat\n"); return 1; }
+    int n = std::atoi(argv[4]);
+    double seconds = argc > 6 ? std::atof(argv[6]) : 10.0;
+    if (!std::strcmp(argv[3], "music")) drv->playMusic(n);
+    else drv->playSfx(n);
+    int rate = drv->sampleRate(), frames = int(seconds * rate);
+    std::vector<int16_t> pcm(static_cast<size_t>(frames));
+    drv->generate(pcm.data(), frames);
+    if (!drv->ok()) { std::fprintf(stderr, "%s\n", drv->error().c_str()); return 1; }
+    double sum = 0;
+    int peak = 0;
+    for (int16_t v : pcm) { sum += double(v) * v; peak = std::max(peak, std::abs(int(v))); }
+    std::printf("%d samples at %d Hz, rms %.1f, peak %d\n", frames, rate, std::sqrt(sum / frames), peak);
+    Bytes wav;
+    auto put32 = [&](uint32_t v) { for (int i = 0; i < 4; ++i) wav.push_back(uint8_t(v >> (8 * i))); };
+    auto put16 = [&](uint16_t v) { wav.push_back(uint8_t(v)); wav.push_back(uint8_t(v >> 8)); };
+    auto tag = [&](const char* t) { wav.insert(wav.end(), t, t + 4); };
+    tag("RIFF"); put32(uint32_t(36 + frames * 2)); tag("WAVE");
+    tag("fmt "); put32(16); put16(1); put16(1); put32(uint32_t(rate)); put32(uint32_t(rate * 2)); put16(2); put16(16);
+    tag("data"); put32(uint32_t(frames * 2));
+    for (int16_t v : pcm) put16(uint16_t(v));
+    writeFile(argv[5], wav);
+    return 0;
+}
+
 } // namespace
 
 int main(int argc, char** argv) {
@@ -282,6 +317,7 @@ int main(int argc, char** argv) {
         if (!std::strcmp(argv[1], "main")) return cmdMain(argc, argv);
         if (!std::strcmp(argv[1], "list")) return cmdList(argc, argv);
         if (!std::strcmp(argv[1], "sim")) return cmdSim(argc, argv);
+        if (!std::strcmp(argv[1], "audio")) return cmdAudio(argc, argv);
         std::fprintf(stderr, "unknown command %s\n", argv[1]);
     } catch (const std::exception& e) {
         std::fprintf(stderr, "error: %s\n", e.what());

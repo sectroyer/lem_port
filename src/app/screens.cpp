@@ -30,8 +30,11 @@ Frontend::Frontend(const std::string& dataDir, int rating, int level)
     : dataDir_(dataDir), pack_(dataDir), md_(loadMainData(dataDir)), anims_(md_),
       play_(kPlayW, kPlayH, 0), menu_(kMenuW, kMenuH, 0) {
     menuPal_ = menuPalette();
+    audioOk_ = audio_.open(dataDir);
     loadLevel(rating, level);
 }
+
+Frontend::~Frontend() { audio_.stop(); }
 
 // ---------------------------------------------------------------------------
 // Flow
@@ -56,11 +59,19 @@ void Frontend::startPlaying() {
     paused_ = fast_ = false;
     rrHeld_ = 0;
     mode_ = Mode::Playing;
+    // Special levels have their own tune; the others cycle through a list.
+    static const int kSpecialMusic[4] = {1, 9, 3, 2};
+    static const int kLevelMusic[17] = {6, 7, 8, 10, 11, 4, 12, 13, 14, 15, 5, 16, 17, 18, 19, 20, 21};
+    int track = levelDef_.specialSet >= 1 && levelDef_.specialSet <= 4
+                    ? kSpecialMusic[levelDef_.specialSet - 1]
+                    : kLevelMusic[musicCounter_ % 17];
+    audio_.music(track);
 }
 
 void Frontend::finishLevel() {
     result_ = game_->result();
     mode_ = Mode::Result;
+    audio_.stop();
 }
 
 void Frontend::update() {
@@ -76,7 +87,7 @@ void Frontend::update() {
         // rate can still be changed from the keyboard.
         game_->setReleaseRateChange(rrFromKeyboard_ ? rrHeld_ : 0);
         game_->tickPaused();
-        game_->takeSounds();
+        for (int id : game_->takeSounds()) audio_.sfx(id);
         return;
     }
     game_->setReleaseRateChange(rrHeld_);
@@ -84,7 +95,7 @@ void Frontend::update() {
         game_->setCursor(cursorGameX(), cursorGameY(), rightDown_);
         game_->tick();
     }
-    game_->takeSounds();
+    for (int id : game_->takeSounds()) audio_.sfx(id);
     if (game_->finished()) finishLevel();
 }
 
@@ -106,6 +117,7 @@ bool Frontend::handleEvent(const SDL_Event& ev) {
         if (mode_ == Mode::Preview && !codeEntry_) { codeMessage_.clear(); startPlaying(); }
         else if (mode_ == Mode::Result) {
             if (result_.success) {
+                ++musicCounter_;
                 int n = level_ + 1, r = rating_;
                 if (n >= kLevelsPerRating) { n = 0; r = std::min(r + 1, kRatings - 1); }
                 loadLevel(r, n);
@@ -178,6 +190,11 @@ bool Frontend::handleEvent(const SDL_Event& ev) {
         else if (k == SDLK_F11 || k == SDLK_P || k == SDLK_PAUSE) paused_ = !paused_;
         else if (k == SDLK_F12) pressNuke();
         else if (k == SDLK_F) fast_ = !fast_;
+        else if (k == SDLK_M) {
+            audio_.musicOn = !audio_.musicOn;
+            if (!audio_.musicOn) audio_.stop();
+        }
+        else if (k == SDLK_X) audio_.sfxOn = !audio_.sfxOn;
         else if (k == SDLK_LEFT) scrollDir_ = -1;
         else if (k == SDLK_RIGHT) scrollDir_ = 1;
         else if (k == SDLK_ESCAPE) finishLevel();
@@ -198,7 +215,7 @@ bool Frontend::handleEvent(const SDL_Event& ev) {
 
 void Frontend::selectSkill(int button) {
     if (button >= BtnSkill0 && button < BtnSkill0 + SkillCount) {
-        if (selected_ != button - BtnSkill0) game_->takeSounds();
+        if (selected_ != button - BtnSkill0) audio_.sfx(SfxSkillSelect);
         selected_ = button - BtnSkill0;
     }
 }

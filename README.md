@@ -62,6 +62,7 @@ On first start without `--data`, a folder picker asks for the data folder.
 | F11, P | pause |
 | Double-click nuke, F12 | nuke |
 | F | fast forward |
+| M / X | music / sound effects on or off |
 | Arrow keys, mouse at screen edge, minimap | scroll |
 | Hold right button | prefer walking lemmings when assigning |
 | Alt+Enter | fullscreen |
