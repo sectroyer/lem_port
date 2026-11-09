@@ -67,7 +67,9 @@ On first start without `--data`, a folder picker asks for the data folder.
 | Alt+Enter | fullscreen |
 | Esc | end the level |
 
-On the level preview screen the arrow keys and Page Up/Down choose a level.
+On the level preview screen the arrow keys and Page Up/Down choose a level,
+and C opens the access code entry. After a successful level the result
+screen shows the access code for the next one.
 
 ## Tools
 

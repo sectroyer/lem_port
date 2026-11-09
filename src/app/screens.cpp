@@ -96,7 +96,7 @@ bool Frontend::handleEvent(const SDL_Event& ev) {
         if (right) rightDown_ = true;
         mouseX_ = std::clamp(int(ev.button.x), 0, kScreenW - 1);
         mouseY_ = std::clamp(int(ev.button.y), 0, kScreenH - 1);
-        if (mode_ == Mode::Preview) startPlaying();
+        if (mode_ == Mode::Preview && !codeEntry_) { codeMessage_.clear(); startPlaying(); }
         else if (mode_ == Mode::Result) {
             if (result_.success) {
                 int n = level_ + 1, r = rating_;
@@ -116,8 +116,32 @@ bool Frontend::handleEvent(const SDL_Event& ev) {
         break;
     case SDL_EVENT_KEY_DOWN: {
         SDL_Keycode k = ev.key.key;
+        if (mode_ == Mode::Preview && codeEntry_) {
+            if (k == SDLK_ESCAPE) { codeEntry_ = false; codeMessage_.clear(); }
+            else if (k == SDLK_BACKSPACE && !codeInput_.empty()) codeInput_.pop_back();
+            else if (k >= SDLK_A && k <= SDLK_Z && codeInput_.size() < 10) codeInput_ += char('A' + (k - SDLK_A));
+            else if (k == SDLK_RETURN && codeInput_.size() == 10) {
+                auto c = decodeAccessCode(codeInput_);
+                if (c && c->level < kRatings * kLevelsPerRating) {
+                    codeFlags_ = c->flags;
+                    codeEntry_ = false;
+                    loadLevel(c->level / kLevelsPerRating, c->level % kLevelsPerRating);
+                    codeMessage_ = "Code for Level " + std::to_string(level_ + 1) + " " + upper(ratingName(rating_));
+                } else {
+                    codeMessage_ = "Incorrect Code";
+                    codeInput_.clear();
+                }
+            }
+            break;
+        }
         if (mode_ == Mode::Preview) {
             if (k == SDLK_ESCAPE) return false;
+            if (k == SDLK_C || k == SDLK_TAB) {
+                codeEntry_ = true;
+                codeInput_.clear();
+                codeMessage_.clear();
+                break;
+            }
             if (k == SDLK_RIGHT || k == SDLK_DOWN) {
                 int n = level_ + 1, r = rating_;
                 if (n >= kLevelsPerRating) { n = 0; r = (r + 1) % kRatings; }
@@ -380,8 +404,15 @@ void Frontend::drawPreview() {
     std::snprintf(buf, sizeof buf, "Time %d Minute%s", levelDef_.timeMinutes, levelDef_.timeMinutes == 1 ? "" : "s");
     drawMenuTextCentered(200, buf);
     drawMenuTextCentered(220, std::string("Rating  ") + upper(ratingName(rating_)));
+    if (codeEntry_) {
+        drawMenuTextCentered(256, "Enter Code");
+        drawMenuTextCentered(280, codeInput_ + std::string(10 - codeInput_.size(), '.'));
+        if (!codeMessage_.empty()) drawMenuTextCentered(304, codeMessage_);
+        return;
+    }
+    if (!codeMessage_.empty()) drawMenuTextCentered(240, codeMessage_);
     drawMenuTextCentered(272, "Press mouse button to continue");
-    drawMenuTextCentered(304, "Arrows: choose level   Esc: quit");
+    drawMenuTextCentered(304, "Arrows: level  C: code  Esc: quit");
 }
 
 void Frontend::drawResult() {
@@ -395,6 +426,15 @@ void Frontend::drawResult() {
     else if (result_.success) drawMenuTextCentered(160, "Well done! On to the next level.");
     else if (result_.achieved == 0) drawMenuTextCentered(160, "Oh dear, not even one rescued.");
     else drawMenuTextCentered(160, "So close... have another go.");
+    if (result_.success) {
+        int next = rating_ * kLevelsPerRating + level_ + 1;
+        if (next < kRatings * kLevelsPerRating) {
+            std::string code = encodeAccessCode({next, result_.achieved, codeFlags_});
+            std::snprintf(buf, sizeof buf, "Your Access Code for Level %d", next % kLevelsPerRating + 1);
+            drawMenuTextCentered(208, buf);
+            drawMenuTextCentered(228, "is " + code);
+        }
+    }
     drawMenuTextCentered(272, result_.success ? "Press mouse button for next level"
                                               : "Press mouse button to retry level");
 }

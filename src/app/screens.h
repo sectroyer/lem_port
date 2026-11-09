@@ -13,6 +13,7 @@
 #include "levelpack.h"
 #include "levelrender.h"
 #include "maindat.h"
+#include "password.h"
 
 namespace lem {
 
@@ -79,6 +80,10 @@ private:
     bool rightDown_ = false;
     int frameCounter_ = 0;
     GameResult result_{};
+    int codeFlags_ = 0;           // carried from the last entered code
+    bool codeEntry_ = false;
+    std::string codeInput_;
+    std::string codeMessage_;
 
     Bitmap levelFrame_;           // 1600x160 rendered level
     Bitmap play_;                 // 320x200 play screen
