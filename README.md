@@ -68,9 +68,12 @@ On first start without `--data`, a folder picker asks for the data folder.
 | Alt+Enter | fullscreen |
 | Esc | end the level |
 
-On the level preview screen the arrow keys and Page Up/Down choose a level,
-and C opens the access code entry. After a successful level the result
-screen shows the access code for the next one.
+Main menu: F1 (or click the sign) plays, F2 enters an access code, F3 cycles
+music + effects / effects only / silence, the arrow keys or the rating sign
+change the rating, Esc quits. On the level preview screen the arrow keys and
+Page Up/Down also choose any level. After a successful level the result screen
+shows the access code for the next one; the right mouse button returns to the
+menu.
 
 ## Tools
 

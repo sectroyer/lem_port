@@ -19,11 +19,6 @@ enum Button { BtnSlower, BtnFaster, BtnSkill0, BtnPause = BtnSkill0 + SkillCount
 
 uint32_t rgb(const Rgb& c) { return uint32_t(c.r) << 16 | uint32_t(c.g) << 8 | c.b; }
 
-std::string upper(std::string s) {
-    for (char& c : s) c = char(std::toupper(uint8_t(c)));
-    return s;
-}
-
 } // namespace
 
 Frontend::Frontend(const std::string& dataDir, int rating, int level)
@@ -32,6 +27,38 @@ Frontend::Frontend(const std::string& dataDir, int rating, int level)
     menuPal_ = menuPalette();
     audioOk_ = audio_.open(dataDir);
     loadLevel(rating, level);
+    mode_ = Mode::Menu;
+}
+
+void Frontend::goToMenu() {
+    if (game_) audio_.stop();
+    game_.reset();
+    codeTimer_ = 0;
+    mode_ = Mode::Menu;
+}
+
+void Frontend::cycleSound() {
+    // Music + effects -> effects only -> silence -> music + effects.
+    if (audio_.musicOn) { audio_.musicOn = false; audio_.stop(); }
+    else if (audio_.sfxOn) audio_.sfxOn = false;
+    else { audio_.musicOn = true; audio_.sfxOn = true; }
+}
+
+void Frontend::menuSelect(int item) {
+    switch (item) {
+    case 0: loadLevel(rating_, level_); break;
+    case 1:
+        mode_ = Mode::Code;
+        codeInput_.clear();
+        codeMessage_.clear();
+        codeMessage2_.clear();
+        codeTimer_ = 0;
+        break;
+    case 2: cycleSound(); break;
+    case 3: rating_ = (rating_ + 1) % kRatings; level_ = 0; break;
+    case 4: quit_ = true; break;
+    default: break;
+    }
 }
 
 Frontend::~Frontend() { audio_.stop(); }
@@ -76,6 +103,7 @@ void Frontend::finishLevel() {
 
 void Frontend::update() {
     ++frameCounter_;
+    if (mode_ == Mode::Code && codeTimer_ > 0 && --codeTimer_ == 0) goToMenu();
     if (mode_ != Mode::Playing) return;
     if (scrollDir_ == 0 && mouseY_ / 2 < kViewH) {
         if (mouseX_ <= 1) scrollX_ -= kScrollStep;
@@ -114,8 +142,20 @@ bool Frontend::handleEvent(const SDL_Event& ev) {
         if (right) rightDown_ = true;
         mouseX_ = std::clamp(int(ev.button.x), 0, kScreenW - 1);
         mouseY_ = std::clamp(int(ev.button.y), 0, kScreenH - 1);
-        if (mode_ == Mode::Preview && !codeEntry_) { codeMessage_.clear(); startPlaying(); }
-        else if (mode_ == Mode::Result) {
+        if (mode_ == Mode::Menu) {
+            // Signs: F1 play, F2 code, F3 sound, rating, exit (F4 has no function).
+            static const int kItem[6] = {0, 1, 2, 3, 4, -1};
+            static const int kSign[6][2] = {{68, 120}, {196, 120}, {324, 120}, {452, 120}, {196, 197}, {324, 197}};
+            int mx = mouseX_, my = mouseY_ - (kScreenH - 350) / 2;
+            for (int i = 0; i < 6; ++i)
+                if (mx >= kSign[i][0] && mx < kSign[i][0] + 120 && my >= kSign[i][1] && my < kSign[i][1] + 61)
+                    menuSelect(kItem[i]);
+        } else if (mode_ == Mode::Code) {
+            if (codeTimer_ > 0) goToMenu();
+        } else if (mode_ == Mode::Preview) {
+            startPlaying();
+        } else if (mode_ == Mode::Result) {
+            if (right) { goToMenu(); break; }
             if (result_.success) {
                 ++musicCounter_;
                 int n = level_ + 1, r = rating_;
@@ -135,32 +175,40 @@ bool Frontend::handleEvent(const SDL_Event& ev) {
         break;
     case SDL_EVENT_KEY_DOWN: {
         SDL_Keycode k = ev.key.key;
-        if (mode_ == Mode::Preview && codeEntry_) {
-            if (k == SDLK_ESCAPE) { codeEntry_ = false; codeMessage_.clear(); }
+        if (mode_ == Mode::Menu) {
+            if (k == SDLK_F1 || k == SDLK_RETURN || k == SDLK_SPACE) menuSelect(0);
+            else if (k == SDLK_F2) menuSelect(1);
+            else if (k == SDLK_F3) menuSelect(2);
+            else if (k == SDLK_UP || k == SDLK_GRAVE) { if (rating_ < kRatings - 1) { ++rating_; level_ = 0; } }
+            else if (k == SDLK_DOWN || k == SDLK_MINUS) { if (rating_ > 0) { --rating_; level_ = 0; } }
+            else if (k == SDLK_ESCAPE) menuSelect(4);
+            break;
+        }
+        if (mode_ == Mode::Code) {
+            if (codeTimer_ > 0) { goToMenu(); break; }
+            if (k == SDLK_ESCAPE) goToMenu();
             else if (k == SDLK_BACKSPACE && !codeInput_.empty()) codeInput_.pop_back();
             else if (k >= SDLK_A && k <= SDLK_Z && codeInput_.size() < 10) codeInput_ += char('A' + (k - SDLK_A));
             else if (k == SDLK_RETURN && codeInput_.size() == 10) {
                 auto c = decodeAccessCode(codeInput_);
                 if (c && c->level < kRatings * kLevelsPerRating) {
                     codeFlags_ = c->flags;
-                    codeEntry_ = false;
-                    loadLevel(c->level / kLevelsPerRating, c->level % kLevelsPerRating);
-                    codeMessage_ = "Code for Level " + std::to_string(level_ + 1) + " " + upper(ratingName(rating_));
+                    rating_ = c->level / kLevelsPerRating;
+                    level_ = c->level % kLevelsPerRating;
+                    codeMessage_ = "Code for Level " + std::to_string(level_ + 1);
+                    codeMessage2_ = std::string("Rating ") + ratingName(rating_);
+                    codeTimer_ = 120;
                 } else {
                     codeMessage_ = "Incorrect Code";
-                    codeInput_.clear();
+                    codeMessage2_.clear();
+                    codeTimer_ = 60;
                 }
             }
             break;
         }
         if (mode_ == Mode::Preview) {
-            if (k == SDLK_ESCAPE) return false;
-            if (k == SDLK_C || k == SDLK_TAB) {
-                codeEntry_ = true;
-                codeInput_.clear();
-                codeMessage_.clear();
-                break;
-            }
+            if (k == SDLK_ESCAPE) { goToMenu(); break; }
+            // Level selection on the preview screen (not in the original).
             if (k == SDLK_RIGHT || k == SDLK_DOWN) {
                 int n = level_ + 1, r = rating_;
                 if (n >= kLevelsPerRating) { n = 0; r = (r + 1) % kRatings; }
@@ -179,7 +227,7 @@ bool Frontend::handleEvent(const SDL_Event& ev) {
             break;
         }
         if (mode_ == Mode::Result) {
-            if (k == SDLK_ESCAPE) loadLevel(rating_, level_);
+            if (k == SDLK_ESCAPE) goToMenu();
             break;
         }
         if (ev.key.repeat && k != SDLK_LEFT && k != SDLK_RIGHT) break;
@@ -210,7 +258,7 @@ bool Frontend::handleEvent(const SDL_Event& ev) {
     default:
         break;
     }
-    return true;
+    return !quit_;
 }
 
 void Frontend::selectSkill(int button) {
@@ -272,6 +320,8 @@ void Frontend::draw(uint32_t* pixels, int pitch) {
     menu_ = Bitmap(kMenuW, kMenuH, 0);
     drawMenuBackground();
     if (mode_ == Mode::Preview) drawPreview();
+    else if (mode_ == Mode::Menu) drawMenu();
+    else if (mode_ == Mode::Code) drawCode();
     else drawResult();
     for (size_t i = 0; i < rgbBuf.size(); ++i) rgbBuf[i] = rgb(menuPal_[menu_.px[i] & 15]);
     if (mode_ == Mode::Preview) {
@@ -435,40 +485,92 @@ void Frontend::drawPreview() {
     drawMenuTextCentered(180, buf);
     std::snprintf(buf, sizeof buf, "Time %d Minute%s", levelDef_.timeMinutes, levelDef_.timeMinutes == 1 ? "" : "s");
     drawMenuTextCentered(200, buf);
-    drawMenuTextCentered(220, std::string("Rating  ") + upper(ratingName(rating_)));
-    if (codeEntry_) {
-        drawMenuTextCentered(256, "Enter Code");
-        drawMenuTextCentered(280, codeInput_ + std::string(10 - codeInput_.size(), '.'));
-        if (!codeMessage_.empty()) drawMenuTextCentered(304, codeMessage_);
-        return;
-    }
-    if (!codeMessage_.empty()) drawMenuTextCentered(240, codeMessage_);
+    drawMenuTextCentered(220, std::string("Rating  ") + ratingName(rating_));
     drawMenuTextCentered(272, "Press mouse button to continue");
-    drawMenuTextCentered(304, "Arrows: level  C: code  Esc: quit");
 }
 
 void Frontend::drawResult() {
+    // Messages and thresholds of the original result screen.
+    static const char* kMsg[9][2] = {
+        {"ROCK BOTTOM! I hope for your sake", "that you nuked that level."},
+        {"Better rethink your strategy before", "you try this level again!"},
+        {"A little more practice on this level", "is definitely recommended."},
+        {"You got pretty close that time.", "Now try again for that few % extra."},
+        {"OH NO, So near and yet so far (teehee)", "Maybe this time....."},
+        {"RIGHT ON. You can't get much closer", "than that. Let's try the next...."},
+        {"That level seemed no problem to you on", "that attempt. Onto the next...."},
+        {"You totally stormed that level!", "Let's see if you can storm the next..."},
+        {"Superb! You rescued every lemming on", "that level. Can you do it again....?"},
+    };
+    int a = result_.achieved, n = result_.needed, m;
+    if (a == 100) m = 8;
+    else if (a == 0) m = 0;
+    else if (a < n / 2) m = 1;
+    else if (a < n - 5) m = 2;
+    else if (a < n - 1) m = 3;
+    else if (a == n - 1) m = 4;
+    else if (a == n) m = 5;
+    else if (a < n + 20) m = 6;
+    else m = 7;
+
     char buf[64];
-    drawMenuTextCentered(48, result_.timeUp ? "Your time is up!" : "All lemmings accounted for.");
-    std::snprintf(buf, sizeof buf, "You rescued %d%%", result_.achieved);
-    drawMenuTextCentered(96, buf);
-    std::snprintf(buf, sizeof buf, "You needed  %d%%", result_.needed);
-    drawMenuTextCentered(112, buf);
-    if (result_.achieved == 100) drawMenuTextCentered(160, "Superb! You rescued every lemming.");
-    else if (result_.success) drawMenuTextCentered(160, "Well done! On to the next level.");
-    else if (result_.achieved == 0) drawMenuTextCentered(160, "Oh dear, not even one rescued.");
-    else drawMenuTextCentered(160, "So close... have another go.");
-    if (result_.success) {
-        int next = rating_ * kLevelsPerRating + level_ + 1;
-        if (next < kRatings * kLevelsPerRating) {
-            std::string code = encodeAccessCode({next, result_.achieved, codeFlags_});
-            std::snprintf(buf, sizeof buf, "Your Access Code for Level %d", next % kLevelsPerRating + 1);
-            drawMenuTextCentered(208, buf);
-            drawMenuTextCentered(228, "is " + code);
-        }
+    drawMenuTextCentered(16, result_.timeUp ? "Your time is up!" : "All lemmings accounted for.");
+    std::snprintf(buf, sizeof buf, "You rescued %d%%", a);
+    drawMenuTextCentered(56, buf);
+    std::snprintf(buf, sizeof buf, "You needed  %d%%", n);
+    drawMenuTextCentered(72, buf);
+    int next = rating_ * kLevelsPerRating + level_ + 1;
+    bool last = next >= kRatings * kLevelsPerRating;
+    if (result_.success && last) {
+        drawMenuTextCentered(112, "Congratulations!");
+        drawMenuTextCentered(144, "Everybody here at DMA Design salutes you");
+        drawMenuTextCentered(160, "as a MASTER Lemmings player. Not many");
+        drawMenuTextCentered(176, "people will complete the Mayhem levels,");
+        drawMenuTextCentered(192, "you are definitely one of the elite");
+    } else {
+        drawMenuTextCentered(112, kMsg[m][0]);
+        drawMenuTextCentered(128, kMsg[m][1]);
     }
-    drawMenuTextCentered(272, result_.success ? "Press mouse button for next level"
-                                              : "Press mouse button to retry level");
+    if (result_.success && !last) {
+        std::string code = encodeAccessCode({next, a, codeFlags_});
+        std::snprintf(buf, sizeof buf, "Your Access Code for Level %d", next % kLevelsPerRating + 1);
+        drawMenuTextCentered(176, buf);
+        drawMenuTextCentered(192, "is " + code);
+    }
+    drawMenuTextCentered(272, result_.success && !last ? "Press left mouse button for next level"
+                                                       : "Press left mouse button to retry level");
+    drawMenuTextCentered(304, "Press right mouse button for menu");
+}
+
+void Frontend::blitMenu(const Bitmap& b, int x0, int y0, bool shadow) {
+    for (int y = 0; y < b.h; ++y)
+        for (int x = 0; x < b.w; ++x) {
+            uint8_t c = b.at(x, y);
+            int px = x0 + x, py = y0 + y;
+            if (c == kTransparent || px < 0 || py < 0 || px >= kMenuW || py >= kMenuH) continue;
+            menu_.at(px, py) = shadow ? 0 : c;
+        }
+}
+
+void Frontend::drawMenu() {
+    // Positions as drawn by the original; every element casts a shadow.
+    blitMenu(md_.logo, 0, 20, true);
+    blitMenu(md_.logo, 8, 10, false);
+    static const int kSign[6][2] = {{68, 120}, {196, 120}, {324, 120}, {452, 120}, {196, 197}, {324, 197}};
+    for (int i = 0; i < 6; ++i) blitMenu(md_.signs[i], kSign[i][0] - 8, kSign[i][1] + 8, true);
+    for (int i = 0; i < 6; ++i) blitMenu(md_.signs[i], kSign[i][0], kSign[i][1], false);
+    // Sound sign shows music, effects only, or nothing.
+    if (audio_.musicOn) blitMenu(md_.iconMusic, kSign[2][0] + 27, kSign[2][1] + 26, false);
+    else if (audio_.sfxOn) blitMenu(md_.iconFx, kSign[2][0] + 27, kSign[2][1] + 26, false);
+    // Rating board (stored mayhem, taxing, tricky, fun).
+    blitMenu(md_.ratingSigns[3 - rating_], kSign[3][0] + 32, kSign[3][1] + 24, false);
+}
+
+void Frontend::drawCode() {
+    drawMenuTextCentered(120, "Enter Code");
+    drawMenuTextCentered(152, codeInput_ + std::string(10 - codeInput_.size(), '.'));
+    if (!codeMessage_.empty()) drawMenuTextCentered(184, codeMessage_);
+    if (!codeMessage2_.empty()) drawMenuTextCentered(216, codeMessage2_);
 }
 
 } // namespace lem

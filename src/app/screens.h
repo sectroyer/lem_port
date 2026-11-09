@@ -37,7 +37,7 @@ public:
     int levelNumber() const { return level_; }
 
 private:
-    enum class Mode { Preview, Playing, Result };
+    enum class Mode { Menu, Code, Preview, Playing, Result };
 
     void loadLevel(int rating, int level);
     void startPlaying();
@@ -61,6 +61,12 @@ private:
     void drawMenuTextCentered(int y, const std::string& s);
     void drawPreview();
     void drawResult();
+    void drawMenu();
+    void drawCode();
+    void blitMenu(const Bitmap& b, int x, int y, bool shadow);
+    void menuSelect(int item);   // 0 play, 1 code, 2 sound, 3 rating, 4 exit
+    void cycleSound();
+    void goToMenu();
 
     std::string dataDir_;
     LevelPack pack_;
@@ -93,9 +99,11 @@ private:
     bool rrFromKeyboard_ = false;
     GameResult result_{};
     int codeFlags_ = 0;           // carried from the last entered code
-    bool codeEntry_ = false;
     std::string codeInput_;
     std::string codeMessage_;
+    std::string codeMessage2_;
+    int codeTimer_ = 0;          // frames until the code screen returns to the menu
+    bool quit_ = false;
 
     Bitmap levelFrame_;           // 1600x160 rendered level
     Bitmap play_;                 // 320x200 play screen
