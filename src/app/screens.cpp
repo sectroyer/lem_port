@@ -72,6 +72,7 @@ void Frontend::menuSelect(int item) {
     case 2: cycleSound(); break;
     case 3: rating_ = (rating_ + 1) % kRatings; level_ = 0; break;
     case 4: quit_ = true; break;
+    case 5: mode_ = Mode::Help; break;
     default: break;
     }
 }
@@ -172,12 +173,14 @@ bool Frontend::handleEvent(const SDL_Event& ev) {
         mouseY_ = std::clamp(int(ev.button.y), 0, kScreenH - 1);
         if (mode_ == Mode::Menu) {
             // Signs: F1 play, F2 code, F3 sound, rating, exit (F4 has no function).
-            static const int kItem[6] = {0, 1, 2, 3, 4, -1};
+            static const int kItem[6] = {0, 1, 2, 3, 4, 5};
             static const int kSign[6][2] = {{68, 120}, {196, 120}, {324, 120}, {452, 120}, {196, 197}, {324, 197}};
             int mx = mouseX_, my = mouseY_ - (kScreenH - 350) / 2;
             for (int i = 0; i < 6; ++i)
                 if (mx >= kSign[i][0] && mx < kSign[i][0] + 120 && my >= kSign[i][1] && my < kSign[i][1] + 61)
                     menuSelect(kItem[i]);
+        } else if (mode_ == Mode::Help) {
+            goToMenu();
         } else if (mode_ == Mode::Code) {
             if (codeTimer_ > 0) goToMenu();
         } else if (mode_ == Mode::Preview) {
@@ -207,9 +210,14 @@ bool Frontend::handleEvent(const SDL_Event& ev) {
             if (k == SDLK_F1 || k == SDLK_RETURN || k == SDLK_SPACE) menuSelect(0);
             else if (k == SDLK_F2) menuSelect(1);
             else if (k == SDLK_F3) menuSelect(2);
+            else if (k == SDLK_F4) menuSelect(5);
             else if (k == SDLK_UP || k == SDLK_GRAVE) { if (rating_ < kRatings - 1) { ++rating_; level_ = 0; } }
             else if (k == SDLK_DOWN || k == SDLK_MINUS) { if (rating_ > 0) { --rating_; level_ = 0; } }
             else if (k == SDLK_ESCAPE) menuSelect(4);
+            break;
+        }
+        if (mode_ == Mode::Help) {
+            goToMenu();
             break;
         }
         if (mode_ == Mode::Code) {
@@ -350,6 +358,7 @@ void Frontend::draw(uint32_t* pixels, int pitch) {
     if (mode_ == Mode::Preview) drawPreview();
     else if (mode_ == Mode::Menu) drawMenu();
     else if (mode_ == Mode::Code) drawCode();
+    else if (mode_ == Mode::Help) drawHelp();
     else drawResult();
     for (size_t i = 0; i < rgbBuf.size(); ++i) rgbBuf[i] = rgb(menuPal_[menu_.px[i] & 15]);
     if (mode_ == Mode::Preview) {
@@ -637,6 +646,31 @@ void Frontend::drawMenu() {
                 menu_.at(px, kReelY + y) = g.at(xx, y);
             }
     }
+}
+
+void Frontend::drawHelp() {
+    // The original F4 sign chose the input device; here it explains the controls.
+    static const char* kLines[] = {
+        "Controls",
+        "",
+        "Click lemming     Assign skill",
+        "F3-F10 or 1-8     Select skill",
+        "F1 F2 or - +      Release rate",
+        "P or F11          Pause",
+        "F                 Fast forward",
+        "F12 twice         Nuke",
+        "Arrows or edges   Scroll",
+        "Right button      Prefer walkers",
+        "M / X             Music / effects",
+        "Esc               End level",
+        "Alt+Enter         Full screen",
+    };
+    int y = 40;
+    for (const char* l : kLines) {
+        drawMenuText(40, y, l);
+        y += 20;
+    }
+    drawMenuTextCentered(320, "Press any key");
 }
 
 void Frontend::drawCode() {

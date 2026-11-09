@@ -41,7 +41,7 @@ public:
     void setSound(bool music, bool sfx) { audio_.musicOn = music; audio_.sfxOn = sfx; }
 
 private:
-    enum class Mode { Menu, Code, Preview, Playing, Result };
+    enum class Mode { Menu, Code, Help, Preview, Playing, Result };
 
     void loadLevel(int rating, int level);
     void startPlaying();
@@ -67,6 +67,7 @@ private:
     void drawResult();
     void drawMenu();
     void drawCode();
+    void drawHelp();
     void blitMenu(const Bitmap& b, int x, int y, bool shadow);
     void menuSelect(int item);   // 0 play, 1 code, 2 sound, 3 rating, 4 exit
     void cycleSound();

@@ -73,7 +73,8 @@ On first start without `--data`, a folder picker asks for the data folder.
 | Alt+Enter | fullscreen |
 | Esc | end the level |
 
-Main menu: F1 (or click the sign) plays, F2 enters an access code, F3 cycles
+Main menu: F1 (or click the sign) plays, F2 enters an access code, F4 shows
+the controls, F3 cycles
 music + effects / effects only / silence, the arrow keys or the rating sign
 change the rating, Esc quits. On the level preview screen the arrow keys and
 Page Up/Down also choose any level. After a successful level the result screen
