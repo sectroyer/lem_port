@@ -33,6 +33,12 @@ target_link_libraries(lemtool PRIVATE lemcore)
 
 if(LEM_BUILD_APP)
   find_package(SDL3 REQUIRED CONFIG)
+  add_executable(lem_port WIN32 MACOSX_BUNDLE
+    src/app/main.cpp
+    src/app/config.cpp
+    src/app/screens.cpp
+  )
+  target_link_libraries(lem_port PRIVATE lemcore SDL3::SDL3)
 endif()
 
 if(LEM_BUILD_TESTS)

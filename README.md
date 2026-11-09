@@ -46,6 +46,29 @@ ctest --test-dir build
 On macOS with MacPorts, add `-DCMAKE_PREFIX_PATH=/opt/local` to the first
 command.
 
+## Playing
+
+```sh
+lem_port --data /path/to/lemmings      # remembered for next time
+```
+
+On first start without `--data`, a folder picker asks for the data folder.
+
+| Input | Action |
+|---|---|
+| Left click on a lemming | assign the selected skill |
+| Click a panel button, F3–F10, 1–8 | select a skill |
+| F1 / F2, − / + | release rate down / up |
+| F11, P | pause |
+| Double-click nuke, F12 | nuke |
+| F | fast forward |
+| Arrow keys, mouse at screen edge, minimap | scroll |
+| Hold right button | prefer walking lemmings when assigning |
+| Alt+Enter | fullscreen |
+| Esc | end the level |
+
+On the level preview screen the arrow keys and Page Up/Down choose a level.
+
 ## Tools
 
 `lemtool` lets you look inside the original data files:

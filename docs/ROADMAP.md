@@ -26,11 +26,12 @@ SDL3 provides the window, input and sound on every target.
 - [ ] Regression tests with recorded solutions
 
 ## Phase 3 – Desktop frontend (SDL3)
-- [ ] Data folder selection (command line, config file, first-run prompt)
-- [ ] Level view with scrolling, skill panel, minimap, cursor
-- [ ] Menu, level info, results, passwords
+- [x] Data folder selection (command line, config file, first-run prompt)
+- [x] Level view with scrolling, skill panel, minimap, cursor
+- [x] Level info and result screens
+- [ ] Main menu, passwords
 - [ ] Sound effects and music (recreated where needed)
-- [ ] Scaling, fullscreen, pause, fast forward
+- [x] Scaling, fullscreen, pause, fast forward
 
 ## Phase 4 – Other platforms
 - [ ] WebAssembly build (Emscripten), data supplied by file picker
