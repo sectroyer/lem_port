@@ -27,6 +27,7 @@ lemtool dat    <file.dat> [outprefix]   # list / extract sections
 lemtool gfx    <datadir> <outdir>       # graphics sets as PNG sheets
 lemtool levels <datadir> <outdir>       # every level as PNG + summary
 lemtool main   <datadir> <outdir>       # sprites, panel, fonts, menu art
+lemtool list   <datadir> [outdir]       # 120 levels in game order (+ PNGs)
 ```
 
 ## Documentation

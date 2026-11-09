@@ -9,7 +9,7 @@ Overview of every file in the DOS release and its status in this project.
 | `vgagrN.dat` (×5) | [compressed](dat-compression.md), [planar bitmaps](planar-bitmaps.md) | supported |
 | `vgaspecN.dat` (×4) | [special set](special-set.md) | supported |
 | `main.dat` | [sprites, masks, panel, menu art](main-dat.md) | supported |
-| `oddtable.dat` | level variations | todo |
+| `oddtable.dat` | [level variations and order](level-order.md) | supported |
 | `adlib.dat` | compressed sound driver + music | todo |
 | `cga*`, `tga*`, `tandysnd.dat` | low-colour variants | not needed |
 | `*.exe`, `*.com` | DOS programs | not used |

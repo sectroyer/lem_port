@@ -9,6 +9,7 @@
 #include "level.h"
 #include "levelrender.h"
 #include "maindat.h"
+#include "levelpack.h"
 #include "png.h"
 
 using namespace lem;
@@ -160,6 +161,34 @@ int cmdMain(int argc, char** argv) {
     return 0;
 }
 
+int cmdList(int argc, char** argv) {
+    if (argc < 3) { std::fprintf(stderr, "usage: lemtool list <datadir> [outdir]\n"); return 1; }
+    std::string dir = argv[2];
+    LevelPack pack(dir);
+    GraphicSet sets[5];
+    bool loaded[5] = {};
+    if (argc > 3) std::filesystem::create_directories(argv[3]);
+    for (int r = 0; r < kRatings; ++r)
+        for (int n = 0; n < kLevelsPerRating; ++n) {
+            Level L = pack.level(r, n);
+            auto s = LevelPack::slot(r, n);
+            std::printf("%-6s %2d  rec %2d%s  rr %2d  %2d/%2d  %d min  \"%s\"\n", ratingName(r), n + 1,
+                        s.record, s.variation ? "*" : " ", L.releaseRate, L.rescue, L.lemmings,
+                        L.timeMinutes, L.name.c_str());
+            if (argc <= 3) continue;
+            int g = L.graphicSet;
+            if (!loaded[g]) { sets[g] = loadGraphicSet(dir, g); loaded[g] = true; }
+            SpecialSet spec;
+            if (L.specialSet) spec = loadSpecialSet(dir, L.specialSet - 1);
+            char png[64];
+            std::snprintf(png, sizeof png, "/%s_%02d.png", ratingName(r), n + 1);
+            savePng(std::string(argv[3]) + png,
+                    renderLevelPreview(L, sets[g], L.specialSet ? &spec : nullptr),
+                    levelPalette(L.specialSet ? spec.vga : sets[g].vgaCustom));
+        }
+    return 0;
+}
+
 } // namespace
 
 int main(int argc, char** argv) {
@@ -172,6 +201,7 @@ int main(int argc, char** argv) {
         if (!std::strcmp(argv[1], "levels")) return cmdLevels(argc, argv);
         if (!std::strcmp(argv[1], "gfx")) return cmdGfx(argc, argv);
         if (!std::strcmp(argv[1], "main")) return cmdMain(argc, argv);
+        if (!std::strcmp(argv[1], "list")) return cmdList(argc, argv);
         std::fprintf(stderr, "unknown command %s\n", argv[1]);
     } catch (const std::exception& e) {
         std::fprintf(stderr, "error: %s\n", e.what());

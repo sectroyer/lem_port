@@ -13,7 +13,7 @@ window, input and audio on every target.
 - [x] Graphics sets (terrain, objects, palettes)
 - [x] Special sets
 - [x] `main.dat`: lemming animations, masks, panel, fonts, menu art
-- [ ] Level order and `oddtable.dat` variations (120 levels in 4 ratings)
+- [x] Level order and `oddtable.dat` variations (120 levels in 4 ratings)
 - [ ] Format documentation for each of the above (`docs/formats/`)
 
 ## Phase 2 – Simulation
