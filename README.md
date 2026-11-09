@@ -54,7 +54,7 @@ command.
 ## Playing
 
 ```sh
-lem_port --data /path/to/lemmings      # remembered for next time
+Lem_Port --data /path/to/lemmings      # remembered for next time
 ```
 
 On first start without `--data`, a folder picker asks for the data folder.

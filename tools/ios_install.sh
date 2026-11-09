@@ -7,7 +7,7 @@
 #
 #   tools/ios_install.sh [-u UDID] APP [DATA_FOLDER]
 #
-#   APP          the built lem_port.app (Release-iphoneos/lem_port.app)
+#   APP          the built Lem_Port.app (Release-iphoneos/Lem_Port.app)
 #   DATA_FOLDER  optional; the folder with main.dat, level000.dat, ...
 #                Its files go to the app's Documents (files of the same name
 #                are replaced, others are kept).
@@ -76,4 +76,4 @@ if [ -n "$data" ]; then
     printf 'ls Documents\nquit\n' | afcclient -u "$udid" --documents "$bundle" |
         sed 's/\x1b\[[0-9;]*m//g' | grep -v '^afc:' | sed 's/^/  /'
 fi
-echo "done: start lem_port on the device"
+echo "done: start Lem_Port on the device"

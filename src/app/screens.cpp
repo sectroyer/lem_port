@@ -662,7 +662,7 @@ void Frontend::drawMenu() {
     static const char* kCredits[] = {
         "Lemmings By DMA Design", "Programming By Russell Kay", "Animation By Gary Timmons",
         "Graphics By Scott Johnston", "Music By Brian Johnston & Tim Wright", "PC Music By Tony Williams",
-        "Copyright 1991 Psygnosis Ltd.", "lem_port - free native engine"};
+        "Copyright 1991 Psygnosis Ltd.", "Lem_Port - free native engine"};
     constexpr int kReelY = kMenuH - 16, kReelX0 = 48, kReelX1 = kMenuW - 48;
     int anim = (menuFrame_ / 4) % 16;
     blitMenu(md_.scrollerLeft[anim], 0, kReelY, false);

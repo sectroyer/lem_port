@@ -57,9 +57,9 @@ void startGame(App& app) {
         app.frontend = std::make_unique<Frontend>(app.config.dataDir, r, n);
         app.frontend->setSound(app.config.music, app.config.sfx);
         if (app.autoPlay) app.frontend->startLevel();
-        SDL_SetWindowTitle(app.window, "lem_port");
+        SDL_SetWindowTitle(app.window, "Lem_Port");
     } catch (const std::exception& e) {
-        SDL_ShowSimpleMessageBox(SDL_MESSAGEBOX_ERROR, "lem_port", e.what(), app.window);
+        SDL_ShowSimpleMessageBox(SDL_MESSAGEBOX_ERROR, "Lem_Port", e.what(), app.window);
         app.frontend.reset();
     }
 }
@@ -69,7 +69,7 @@ void SDLCALL onFolderChosen(void* userdata, const char* const* files, int) {
     app.waitingForFolder = false;
     if (!files || !files[0]) return;
     if (!isDataDir(files[0])) {
-        SDL_ShowSimpleMessageBox(SDL_MESSAGEBOX_WARNING, "lem_port",
+        SDL_ShowSimpleMessageBox(SDL_MESSAGEBOX_WARNING, "Lem_Port",
                                  "That folder does not contain the DOS Lemmings data files "
                                  "(main.dat, level000.dat, ...).", app.window);
         return;
@@ -113,7 +113,7 @@ void askForFolder(App& app) {
 SDL_AppResult SDL_AppInit(void** state, int argc, char** argv) {
     auto* app = new App;
     *state = app;
-    SDL_SetAppMetadata("lem_port", "0.1", "org.lem_port");
+    SDL_SetAppMetadata("Lem_Port", "0.1", "io.github.sectroyer.lemport");
     if (!SDL_Init(SDL_INIT_VIDEO | SDL_INIT_AUDIO)) {
         SDL_Log("SDL_Init failed: %s", SDL_GetError());
         return SDL_APP_FAILURE;
@@ -146,7 +146,7 @@ SDL_AppResult SDL_AppInit(void** state, int argc, char** argv) {
     const SDL_WindowFlags flags = SDL_WINDOW_RESIZABLE;
 #endif
 
-    if (!SDL_CreateWindowAndRenderer("lem_port", kScreenW * app->config.scale,
+    if (!SDL_CreateWindowAndRenderer("Lem_Port", kScreenW * app->config.scale,
                                      kScreenH * app->config.scale, flags,
                                      &app->window, &app->renderer)) {
         SDL_Log("window: %s", SDL_GetError());
@@ -241,7 +241,7 @@ SDL_AppResult SDL_AppIterate(void* state) {
         SDL_SetRenderDrawColor(app.renderer, 200, 200, 200, 255);
 #ifdef SDL_PLATFORM_IOS
         SDL_RenderDebugText(app.renderer, 24, 80, "Copy the DOS Lemmings data files (main.dat,");
-        SDL_RenderDebugText(app.renderer, 24, 92, "level000.dat, ...) into the lem_port folder");
+        SDL_RenderDebugText(app.renderer, 24, 92, "level000.dat, ...) into the Lem_Port folder");
         SDL_RenderDebugText(app.renderer, 24, 104, "with the Files app or Finder. The game starts");
         SDL_RenderDebugText(app.renderer, 24, 116, "as soon as the files are there.");
 #else
