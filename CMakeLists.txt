@@ -99,7 +99,6 @@ if(LEM_BUILD_APP)
   if(LEM_IOS)
     # Icons and launch screen; the icon is original artwork (tools/make_icon.py).
     set(LEM_IOS_RES
-      res/ios/LaunchScreen.storyboard
       res/ios/AppIcon60x60@2x.png
       res/ios/AppIcon60x60@3x.png
       res/ios/AppIcon76x76.png
@@ -115,6 +114,14 @@ if(LEM_BUILD_APP)
       XCODE_ATTRIBUTE_TARGETED_DEVICE_FAMILY "1,2"
       XCODE_ATTRIBUTE_CODE_SIGN_STYLE Automatic
       XCODE_ATTRIBUTE_COMBINE_HIDPI_IMAGES NO)
+    # The launch screen (res/ios/LaunchScreen.storyboard) is used in compiled
+    # form: compiling storyboards needs an installed iOS simulator runtime.
+    # Rebuild it with: ibtool --compile res/ios/LaunchScreen.storyboardc
+    #                  res/ios/LaunchScreen.storyboard
+    add_custom_command(TARGET lem_port POST_BUILD
+      COMMAND ${CMAKE_COMMAND} -E copy_directory
+              ${CMAKE_SOURCE_DIR}/res/ios/LaunchScreen.storyboardc
+              $<TARGET_BUNDLE_DIR:lem_port>/LaunchScreen.storyboardc)
   elseif(APPLE)
     target_sources(lem_port PRIVATE res/lem_port.icns)
     set_source_files_properties(res/lem_port.icns PROPERTIES MACOSX_PACKAGE_LOCATION Resources)
