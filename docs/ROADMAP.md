@@ -1,11 +1,11 @@
 # Roadmap
 
 Goal: a native, self-contained engine for DOS Lemmings that reads the
-original data files from a user-chosen folder. No emulator involved.
+original data files from a folder chosen by the player. No emulator involved.
 
-Targets: Linux and macOS desktop first, then iOS/iPadOS, the browser
-(WebAssembly) and Windows. The engine core has no platform dependencies; SDL3 provides
-window, input and audio on every target.
+Targets: Linux and macOS first, then iOS and iPadOS, the browser
+(WebAssembly) and Windows. The engine core has no platform dependencies;
+SDL3 provides the window, input and sound on every target.
 
 ## Phase 1 – Data files
 - [x] `.DAT` decompression (+ stored-mode writer)
