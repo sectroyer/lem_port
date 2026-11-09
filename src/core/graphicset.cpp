@@ -86,8 +86,8 @@ GraphicSet loadGraphicSet(const std::string& dataDir, int n) {
         oi.maskOffset = le16(o + 8);
         oi.trigLeft = le16(o + 14) * 4;
         oi.trigTop = le16(o + 16) * 4 - 4;
-        oi.trigW = (o[18] ? o[18] : 256) * 4;
-        oi.trigH = (o[19] ? o[19] : 256) * 4;
+        oi.trigW = o[18] * 4;
+        oi.trigH = o[19] * 4;
         oi.effect = TriggerEffect(o[20]);
         oi.baseLoc = le16(o + 21);
         oi.previewLoc = le16(o + 23);

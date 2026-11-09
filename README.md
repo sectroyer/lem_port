@@ -56,12 +56,15 @@ lemtool gfx    <datadir> <outdir>       # graphics sets as PNG sheets
 lemtool levels <datadir> <outdir>       # every level record as PNG + summary
 lemtool main   <datadir> <outdir>       # sprites, panel, fonts, menu art
 lemtool list   <datadir> [outdir]       # the 120 levels in game order (+ PNGs)
+lemtool sim    <datadir> <rating> <n> <outdir> [ticks] [every] [script]
+                                        # play a level headless, save snapshots
 ```
 
 ## Documentation
 
 * [Roadmap](docs/ROADMAP.md) – the plan and current progress
 * [File formats](docs/formats/README.md) – how the original data is stored
+* [Game mechanics](docs/mechanics.md) – how the simulation behaves
 
 ## Acknowledgements
 

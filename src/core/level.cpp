@@ -29,9 +29,10 @@ Level parseLevel(const Bytes& rec) {
         for (int k = 0; k < 8; ++k) blank &= o[k] == 0;
         if (blank) continue;
         LevelObject obj;
-        obj.x = sbe16(o) - 16;
+        obj.slot = i;
+        obj.x = (sbe16(o) & ~7) - 16;
         obj.y = sbe16(o + 2);
-        obj.id = be16(o + 4);
+        obj.id = o[5] & 15;
         obj.noOverwrite = o[6] & 0x80;
         obj.onlyOnTerrain = o[6] & 0x40;
         obj.upsideDown = o[7] & 0x80;

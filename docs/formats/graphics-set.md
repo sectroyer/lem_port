@@ -36,8 +36,8 @@ Implementation: `src/core/graphicset.cpp`.
 | 12 | 2 | (half of mask offset) |
 | 14 | 2 | trigger left / 4 |
 | 16 | 2 | (trigger top + 4) / 4 |
-| 18 | 1 | trigger width / 4 (0 = 256) |
-| 19 | 1 | trigger height / 4 (0 = 256) |
+| 18 | 1 | trigger width / 4 |
+| 19 | 1 | trigger height / 4 |
 | 20 | 1 | trigger effect |
 | 21 | 2 | offset of frame 0 in section 1 |
 | 23 | 2 | preview image offset (does not index the object frames in this data set; frame 0 is used) |

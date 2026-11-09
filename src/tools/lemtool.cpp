@@ -1,6 +1,7 @@
 // SPDX-License-Identifier: GPL-3.0-or-later
 // Command line utility for inspecting and exporting original game data.
 #include <cstdio>
+#include <cstdlib>
 #include <cstring>
 #include <filesystem>
 #include <string>
@@ -11,6 +12,7 @@
 #include "levelrender.h"
 #include "maindat.h"
 #include "levelpack.h"
+#include "game.h"
 #include "png.h"
 
 using namespace lem;
@@ -190,6 +192,82 @@ int cmdList(int argc, char** argv) {
     return 0;
 }
 
+// Runs a level without player input and writes snapshots.
+int cmdSim(int argc, char** argv) {
+    if (argc < 6) {
+        std::fprintf(stderr, "usage: lemtool sim <datadir> <rating 0-3> <level 1-30> <outdir> [ticks] [every] [script]\n"
+                             "script: tick:skill:lemming,... (skill = climber..digger, nuke, rr+N, rr-N)\n");
+        return 1;
+    }
+    std::string dir = argv[2], out = argv[5];
+    int rating = std::atoi(argv[3]), number = std::atoi(argv[4]) - 1;
+    int ticks = argc > 6 ? std::atoi(argv[6]) : 2000;
+    int every = argc > 7 ? std::atoi(argv[7]) : 100;
+    std::filesystem::create_directories(out);
+    LevelPack pack(dir);
+    Level L = pack.level(rating, number);
+    GraphicSet gs = loadGraphicSet(dir, L.graphicSet);
+    SpecialSet spec;
+    if (L.specialSet) spec = loadSpecialSet(dir, L.specialSet - 1);
+    MainData md = loadMainData(dir);
+    AnimSet anims(md);
+    Game game(L, gs, L.specialSet ? &spec : nullptr, anims, md);
+    Palette pal = levelPalette(L.specialSet ? spec.vga : gs.vgaCustom);
+    struct Cmd { int tick; std::string what; int lem; };
+    std::vector<Cmd> script;
+    if (argc > 8) {
+        std::string sc = argv[8];
+        size_t p = 0;
+        while (p < sc.size()) {
+            size_t e = sc.find(',', p);
+            std::string item = sc.substr(p, e == std::string::npos ? std::string::npos : e - p);
+            size_t a = item.find(':'), b = item.find(':', a + 1);
+            script.push_back({std::atoi(item.substr(0, a).c_str()), item.substr(a + 1, b - a - 1),
+                              b == std::string::npos ? 0 : std::atoi(item.substr(b + 1).c_str())});
+            if (e == std::string::npos) break;
+            p = e + 1;
+        }
+    }
+    static const char* skillNames[] = {"climber", "floater", "bomber", "blocker", "builder", "basher", "miner", "digger"};
+    Bitmap frame;
+    for (int t = 1; t <= ticks && !game.finished(); ++t) {
+        for (const Cmd& c : script) {
+            if (c.tick != t) continue;
+            if (c.what == "nuke") { game.nuke(); continue; }
+            if (c.what.rfind("rr", 0) == 0) { game.setReleaseRateChange(c.what[2] == '+' ? 1 : -1); continue; }
+            if (c.what == "rr0") { game.setReleaseRateChange(0); continue; }
+            for (int k = 0; k < SkillCount; ++k) {
+                if (c.what != skillNames[k]) continue;
+                if (c.lem >= int(game.lemmings().size())) { std::printf("t%d: no lemming %d\n", t, c.lem); break; }
+                const Lemming& l = game.lemmings()[c.lem];
+                game.setCursor(l.x - 2, l.y - 5);
+                bool ok = game.assignSkill(Skill(k));
+                std::printf("t%5d assign %s to #%d (%s at %d,%d): %s\n", t, c.what.c_str(), c.lem,
+                            actionName(l.action), l.x, l.y, ok ? "ok" : "refused");
+            }
+        }
+        game.tick();
+        if (t % every == 0) {
+            game.render(frame);
+            char name[64];
+            std::snprintf(name, sizeof name, "/t%05d.png", t);
+            savePng(out + name, frame, pal);
+            int counts[int(Action::Count)] = {};
+            for (const Lemming& l : game.lemmings())
+                if (!l.removed) ++counts[int(l.action)];
+            std::printf("t%5d %d:%02d out %2d in %2d |", t, game.minutes(), game.seconds(),
+                        game.lemmingsOut(), game.lemmingsIn());
+            for (int a = 0; a < int(Action::Count); ++a)
+                if (counts[a]) std::printf(" %s=%d", actionName(Action(a)), counts[a]);
+            std::printf("\n");
+        }
+    }
+    GameResult r = game.result();
+    std::printf("finished=%d iteration=%d rescued %d/%d (%d%% of %d%% needed) %s\n", game.finished(),
+                game.iteration(), r.rescued, r.total, r.achieved, r.needed, r.success ? "SUCCESS" : "fail");
+    return 0;
+}
+
 } // namespace
 
 int main(int argc, char** argv) {
@@ -203,6 +281,7 @@ int main(int argc, char** argv) {
         if (!std::strcmp(argv[1], "gfx")) return cmdGfx(argc, argv);
         if (!std::strcmp(argv[1], "main")) return cmdMain(argc, argv);
         if (!std::strcmp(argv[1], "list")) return cmdList(argc, argv);
+        if (!std::strcmp(argv[1], "sim")) return cmdSim(argc, argv);
         std::fprintf(stderr, "unknown command %s\n", argv[1]);
     } catch (const std::exception& e) {
         std::fprintf(stderr, "error: %s\n", e.what());

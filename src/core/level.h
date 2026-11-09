@@ -20,6 +20,7 @@ enum Skill : int {
 struct LevelObject {
     int x = 0, y = 0;     // pixel position of the top-left corner
     int id = 0;           // index into the graphics set object table
+    int slot = 0;         // record slot 0..31; slots >= 16 are inert
     bool noOverwrite = false;  // drawn behind existing terrain
     bool onlyOnTerrain = false;// visible only where terrain exists
     bool upsideDown = false;
