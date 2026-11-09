@@ -71,10 +71,17 @@ void Frontend::update() {
         else if (mouseX_ >= kScreenW - 2) scrollX_ += kScrollStep;
     }
     scrollX_ = std::clamp(scrollX_ + scrollDir_ * kScrollStep, 0, kLevelWidth - kPlayW);
-    if (paused_) return;
+    if (paused_) {
+        // While paused only the opening sequence runs on, and the release
+        // rate can still be changed from the keyboard.
+        game_->setReleaseRateChange(rrFromKeyboard_ ? rrHeld_ : 0);
+        game_->tickPaused();
+        game_->takeSounds();
+        return;
+    }
     game_->setReleaseRateChange(rrHeld_);
     for (int i = 0, n = fast_ ? 4 : 1; i < n && !game_->finished(); ++i) {
-        game_->setCursor(scrollX_ + mouseX_ / 2, mouseY_ / 2, rightDown_);
+        game_->setCursor(cursorGameX(), cursorGameY(), rightDown_);
         game_->tick();
     }
     game_->takeSounds();
@@ -89,7 +96,7 @@ bool Frontend::handleEvent(const SDL_Event& ev) {
     case SDL_EVENT_MOUSE_MOTION:
         mouseX_ = std::clamp(int(ev.motion.x), 0, kScreenW - 1);
         mouseY_ = std::clamp(int(ev.motion.y), 0, kScreenH - 1);
-        if (game_) game_->setCursor(scrollX_ + mouseX_ / 2, mouseY_ / 2, rightDown_);
+        if (game_) game_->setCursor(cursorGameX(), cursorGameY(), rightDown_);
         break;
     case SDL_EVENT_MOUSE_BUTTON_DOWN: {
         bool right = ev.button.button == SDL_BUTTON_RIGHT;
@@ -166,10 +173,10 @@ bool Frontend::handleEvent(const SDL_Event& ev) {
         if (ev.key.repeat && k != SDLK_LEFT && k != SDLK_RIGHT) break;
         if (k >= SDLK_F3 && k <= SDLK_F10) selectSkill(BtnSkill0 + int(k - SDLK_F3));
         else if (k >= SDLK_1 && k <= SDLK_8) selectSkill(BtnSkill0 + int(k - SDLK_1));
-        else if (k == SDLK_F1 || k == SDLK_MINUS) rrHeld_ = -1;
-        else if (k == SDLK_F2 || k == SDLK_EQUALS || k == SDLK_PLUS) rrHeld_ = 1;
+        else if (k == SDLK_F1 || k == SDLK_MINUS) { rrHeld_ = -1; rrFromKeyboard_ = true; }
+        else if (k == SDLK_F2 || k == SDLK_EQUALS || k == SDLK_PLUS) { rrHeld_ = 1; rrFromKeyboard_ = true; }
         else if (k == SDLK_F11 || k == SDLK_P || k == SDLK_PAUSE) paused_ = !paused_;
-        else if (k == SDLK_F12) game_->nuke();
+        else if (k == SDLK_F12) pressNuke();
         else if (k == SDLK_F) fast_ = !fast_;
         else if (k == SDLK_LEFT) scrollDir_ = -1;
         else if (k == SDLK_RIGHT) scrollDir_ = 1;
@@ -196,10 +203,20 @@ void Frontend::selectSkill(int button) {
     }
 }
 
+void Frontend::pressNuke() {
+    if (paused_) return;
+    if (frameCounter_ - lastNukeFrame_ <= 5) {
+        game_->nuke();
+        lastNukeFrame_ = -100;
+    } else {
+        lastNukeFrame_ = frameCounter_;
+    }
+}
+
 void Frontend::playClick(int x, int y, bool right, bool dbl) {
     if (y < kViewH) {
         if (paused_ || right) return;
-        game_->setCursor(scrollX_ + x, y, rightDown_);
+        game_->setCursor(cursorGameX(), cursorGameY(), rightDown_);
         game_->assignSkill(Skill(selected_));
         return;
     }
@@ -212,12 +229,10 @@ void Frontend::playClick(int x, int y, bool right, bool dbl) {
     if (py < 16 || x >= BtnCount * 16) return;
     int b = x / 16;
     switch (b) {
-    case BtnSlower: rrHeld_ = -1; break;
-    case BtnFaster: rrHeld_ = 1; break;
+    case BtnSlower: if (!paused_) { rrHeld_ = -1; rrFromKeyboard_ = false; } break;
+    case BtnFaster: if (!paused_) { rrHeld_ = 1; rrFromKeyboard_ = false; } break;
     case BtnPause: paused_ = !paused_; break;
-    case BtnNuke:
-        if (dbl) game_->nuke();
-        break;
+    case BtnNuke: pressNuke(); break;
     default: selectSkill(b); break;
     }
 }

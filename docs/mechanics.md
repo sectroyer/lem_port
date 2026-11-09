@@ -5,13 +5,20 @@ and game frames ("ticks").
 
 ## Timing
 
-* One tick = 60 ms (about 16.7 ticks per second).
-* The level clock shows minutes:seconds; one displayed second = 17 ticks.
-* Tick 15: "Let's go!" sound. Tick 34: hatch sound. Tick 35: hatches open.
-* Release interval: `(99 − RR) / 2 + 4` ticks (integer division). The first
-  lemming leaves 20 ticks after the hatches open.
+* One tick (game frame) = 5 interrupts of the PC timer at divisor 0x4000,
+  i.e. 68.66 ms (about 14.6 ticks per second).
+* The level clock shows minutes:seconds; one displayed second = 17 ticks
+  (about 1.17 real seconds).
+* Tick 16: "Let's go!" sound. Tick 36: hatch sound, hatches open.
+* Release interval: `(99 − RR) / 2 + 4` ticks (integer division). The
+  countdown starts at 20 and is first decremented on the opening tick, so the
+  first lemming appears on tick 55.
 * The release rate can be raised up to 99 and lowered down to the level's
-  initial value, one step per tick while the button is held.
+  initial value. While a button is held it moves 5 steps, then pauses for two
+  ticks (the panel is redrawn in between). The keyboard keys also work while
+  the game is paused; the panel buttons do not.
+* When the clock reaches 0:00 two more ticks are simulated (lemmings may
+  still finish exiting); the clock and the release are frozen during them.
 
 ## Entrances
 
@@ -32,6 +39,10 @@ Hatches are used in a rotation of four slots:
   areas and blocker force fields. It covers x −16…1647 and y −16…175.
 * Steel areas are written first, then object triggers in object order.
   Objects stored in record slots 16–31 are drawn but have no trigger.
+  A slot whose x field is 0 is ignored completely (not drawn, animated or
+  triggered).
+* Continuously animated objects start one frame ahead of their first frame.
+* No object checks happen for a lemming at y ≥ 160.
 * Trigger areas are placed relative to the object position rounded down to a
   multiple of 4.
 
@@ -67,18 +78,36 @@ Every tick, for each lemming in creation order:
 | Basher | Removes terrain with a 4-frame mask per stroke and moves forward between strokes. Stops at steel, at a one-way wall pointing the other way, or if nothing is left in front. |
 | Miner | Removes terrain diagonally with a 2-frame mask, moving 2 px forward and 1–2 px down per cycle. Stops at steel and at one-way walls (a wall pointing right stops miners in both directions, as in the original). |
 | Digger | Removes a 9 px wide row and moves down 1 px twice per cycle. Stops at steel or when nothing is left to dig. |
-| Bomber | After the countdown and "oh no", removes a 16×22 area unless standing on steel or water. |
+| Bomber | After the countdown and "oh no", removes a 16×22 area unless standing on steel or water. The mask clears every pixel, steel graphics included; the steel cells of the coarse map stay. The lemming then stays in the game for 52 ticks while its debris flies: it counts as "out", the cursor can see it and the level does not end before it is gone. |
 
 Lemmings leaving the level at the bottom (y > 163) are removed.
 
+## Kept action bits
+
+The original stores the action as a bit field. Most changes replace it, but
+falling after digging, bashing, mining or climbing, and starting "oh no" or
+exploding, add the new bit and keep the old one until the next replacing
+change. The kept bit still counts for the cursor priority (digger, basher,
+miner, builder, blocker and "oh no" are busy actions) and a kept blocker bit
+refuses climber and floater.
+
 ## Skill assignment
 
-The cursor box of a lemming is 13×13 pixels starting at its sprite's top-left
-corner. When several lemmings are under the cursor, one doing a "busy" action
+The cursor's game point is 3 pixels left of and 2 pixels below the centre of
+the crosshair. The cursor box of a lemming is 13×13 pixels starting at its
+sprite's top-left corner (clamped to the level). When several lemmings are under the cursor, one doing a "busy" action
 (blocker, builder, shrugger, basher, miner, digger, "oh no") is preferred,
-unless the right mouse button is held. Builders, bashers, miners and diggers
-can also be given to a second lemming under the cursor if the first cannot
-take the skill.
+unless the right mouse button is held; with the button held and only busy
+lemmings under the cursor, the last lemming chosen before is used again.
+Builders, bashers, miners and diggers can also be given to a second lemming
+under the cursor if the first cannot take the skill.
+
+The nuke needs two presses within 5 ticks and is not accepted while paused.
+
+## Pause
+
+While paused, the opening sequence (sounds, hatches opening) keeps running,
+but the clock, the release countdown and all lemmings stop.
 
 ## End of level
 
@@ -90,4 +119,4 @@ released count towards the result (an original behaviour). The result is
 ## Explosion debris
 
 Debris is visual only. The engine uses its own generated particle pattern
-(80 particles, 52 frames); the game waits for it to finish before ending.
+(80 particles, 52 frames).

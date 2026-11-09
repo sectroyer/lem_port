@@ -14,11 +14,12 @@ Level parseLevel(const Bytes& rec) {
     if (rec.size() != kLevelRecordSize) throw std::runtime_error("level: bad record size");
     const uint8_t* d = rec.data();
     Level L;
-    L.releaseRate = be16(d + 0);
-    L.lemmings = be16(d + 2);
-    L.rescue = be16(d + 4);
-    L.timeMinutes = be16(d + 6);
-    for (int i = 0; i < SkillCount; ++i) L.skills[i] = be16(d + 8 + 2 * i);
+    // The game only uses the low byte of each header word.
+    L.releaseRate = d[1];
+    L.lemmings = d[3];
+    L.rescue = d[5];
+    L.timeMinutes = d[7];
+    for (int i = 0; i < SkillCount; ++i) L.skills[i] = d[9 + 2 * i];
     L.startX = be16(d + 0x18);
     L.graphicSet = be16(d + 0x1A);
     L.specialSet = be16(d + 0x1C);
@@ -30,7 +31,8 @@ Level parseLevel(const Bytes& rec) {
         if (blank) continue;
         LevelObject obj;
         obj.slot = i;
-        obj.x = (sbe16(o) & ~7) - 16;
+        obj.inactive = be16(o) == 0;
+        obj.x = sbe16(o) - 16;
         obj.y = sbe16(o + 2);
         obj.id = o[5] & 15;
         obj.noOverwrite = o[6] & 0x80;

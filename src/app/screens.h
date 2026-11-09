@@ -47,6 +47,11 @@ private:
     void drawPanelText(int col, const std::string& s);
     void playClick(int x, int y, bool right, bool dbl);
     void selectSkill(int button);
+    void pressNuke();
+    // Game coordinates of the cursor: the original's hot spot sits 3 pixels
+    // left of and 2 below the crosshair centre.
+    int cursorGameX() const { return scrollX_ + mouseX_ / 2 - 3; }
+    int cursorGameY() const { return mouseY_ / 2 + 2; }
 
     // Menu-style screens (640x350 coordinates).
     void drawMenuBackground();
@@ -79,6 +84,8 @@ private:
     int mouseX_ = 0, mouseY_ = 0; // canvas coordinates
     bool rightDown_ = false;
     int frameCounter_ = 0;
+    int lastNukeFrame_ = -100;   // the nuke needs two presses within 5 frames
+    bool rrFromKeyboard_ = false;
     GameResult result_{};
     int codeFlags_ = 0;           // carried from the last entered code
     bool codeEntry_ = false;

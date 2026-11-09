@@ -57,7 +57,7 @@ Bitmap renderLevelPreview(const Level& lvl, const GraphicSet& gs, const SpecialS
     Bitmap out(kLevelWidth, kLevelHeight, 0);
     // Objects flagged noOverwrite go behind terrain, others in front.
     for (const LevelObject& o : lvl.objects) {
-        if (o.id < 0 || o.id >= 16 || !gs.objects[o.id].used || !o.noOverwrite) continue;
+        if (o.inactive || o.id < 0 || o.id >= 16 || !gs.objects[o.id].used || !o.noOverwrite) continue;
         const ObjectInfo& oi = gs.objects[o.id];
         int f = oi.previewFrameIndex();
         blitObject(out, terrain, oi.frames[f], o.x, o.y, false, o.onlyOnTerrain, o.upsideDown);
@@ -65,7 +65,7 @@ Bitmap renderLevelPreview(const Level& lvl, const GraphicSet& gs, const SpecialS
     for (size_t i = 0; i < out.px.size(); ++i)
         if (terrain.px[i] != kTransparent) out.px[i] = terrain.px[i];
     for (const LevelObject& o : lvl.objects) {
-        if (o.id < 0 || o.id >= 16 || !gs.objects[o.id].used || o.noOverwrite) continue;
+        if (o.inactive || o.id < 0 || o.id >= 16 || !gs.objects[o.id].used || o.noOverwrite) continue;
         const ObjectInfo& oi = gs.objects[o.id];
         int f = oi.previewFrameIndex();
         blitObject(out, terrain, oi.frames[f], o.x, o.y, false, o.onlyOnTerrain, o.upsideDown);

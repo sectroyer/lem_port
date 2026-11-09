@@ -7,6 +7,8 @@ Implementation: `src/core/level.cpp`.
 
 ## Header (0x000–0x01F)
 
+The game reads only the low byte of each header word.
+
 | Offset | Field |
 |-------:|-------|
 | 0x00 | release rate (1..99) |
@@ -29,7 +31,8 @@ Implementation: `src/core/level.cpp`.
 | 6 | 1 | flags: 0x80 = draw behind terrain, 0x40 = only visible over terrain |
 | 7 | 1 | 0x8F = upside down, 0x0F = normal |
 
-An all-zero slot is empty.
+An all-zero slot is empty. A slot whose x field is 0 is ignored by the game
+(the entrance scan still sees it). The x position is not rounded.
 
 ## Terrain (0x120–0x75F) – 400 × 4 bytes
 

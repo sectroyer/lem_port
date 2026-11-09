@@ -64,7 +64,9 @@ struct Lemming {
     bool newDigger = false;
     bool removed = false;
     bool exploded = false;
-    int particleTimer = 0, particleFrame = 0;
+    int explodeAge = 0;       // ticks since the explosion (record stays until 52)
+    int particleFrame = 0;
+    uint16_t keptBits = 0;    // action bits the original keeps after some transitions
     uint8_t objBelow = 0, objInFront = 0;
     std::array<uint8_t, 9> savedMap{};
     const LemmingAnim* anim = nullptr;
@@ -89,7 +91,8 @@ struct GameResult {
 class Game {
 public:
     static constexpr int kTicksPerSecond = 17;   // game clock ticks per displayed second
-    static constexpr int kTickMs = 60;
+    // One game frame = 5 interrupts of the PC timer programmed with divisor 0x4000.
+    static constexpr int kFrameMicros = int(5.0 * 16384.0 * 1000000.0 / 1193182.0 + 0.5);
 
     Game(const Level& lvl, const GraphicSet& gs, const SpecialSet* spec, const AnimSet& anims,
          const MainData& md);
@@ -100,8 +103,11 @@ public:
     // Player input (apply between ticks).
     void setCursor(int x, int y, bool rightButton = false);
     bool assignSkill(Skill s);          // at the current cursor
-    void setReleaseRateChange(int dir); // +1 faster, -1 slower, 0 none (per tick)
+    void setReleaseRateChange(int dir); // +1 faster, -1 slower, 0 none (button held)
     void nuke();
+    // Called once per frame while the game is paused: only the opening sequence
+    // and (keyboard) release rate changes continue, as in the original.
+    void tickPaused();
 
     // State.
     bool finished() const { return finished_; }
@@ -155,6 +161,8 @@ private:
     void removeLemming(Lemming& l);
     void cue(int sfx);
 
+    void updateReleaseRate();
+    void advanceIntro();
     void releaseLemming();
     void updateLemmings();
     void updateNuke();
@@ -208,13 +216,14 @@ private:
     bool entriesOpen_ = false;
     bool nuking_ = false, nukeInProgress_ = false;
     int nukeIndex_ = 0;
-    int particleFinishTimer_ = 0;
+    int rrPhase_ = 0;
+    int timeUpFrames_ = -1;       // frames still simulated after the clock hit 0:00
     bool finished_ = false, timeUp_ = false;
 
     int cursorX_ = -1000, cursorY_ = -1000;
     bool rightButton_ = false;
     int hovered_ = -1, hoverCount_ = 0;
-    int lastNonPriority_ = -1;
+    int lastPrimary_ = -1;
 };
 
 } // namespace lem

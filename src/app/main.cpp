@@ -118,7 +118,7 @@ SDL_AppResult SDL_AppInit(void** state, int argc, char** argv) {
 
     if (isDataDir(app->config.dataDir)) startGame(*app);
     else askForFolder(*app);
-    app->lastTick = SDL_GetTicks();
+    app->lastTick = SDL_GetTicksNS() / 1000;
     return SDL_APP_CONTINUE;
 }
 
@@ -144,7 +144,7 @@ SDL_AppResult SDL_AppIterate(void* state) {
     App& app = *static_cast<App*>(state);
     if (!app.frontend && isDataDir(app.config.dataDir)) startGame(app);
 
-    Uint64 now = SDL_GetTicks();
+    Uint64 now = SDL_GetTicksNS() / 1000;   // microseconds
     if (app.frontend) {
         // Fixed 60 ms game frames, catching up at most a few frames.
         int steps = 0;
@@ -153,12 +153,12 @@ SDL_AppResult SDL_AppIterate(void* state) {
             app.frontend->update();
             ++app.framesRun;
         }
-        while (app.shotPath.empty() && now - app.lastTick >= Uint64(Game::kTickMs) && steps < 4) {
-            app.lastTick += Game::kTickMs;
+        while (app.shotPath.empty() && now - app.lastTick >= Uint64(Game::kFrameMicros) && steps < 4) {
+            app.lastTick += Game::kFrameMicros;
             app.frontend->update();
             ++steps;
         }
-        if (now - app.lastTick > 1000) app.lastTick = now;
+        if (now - app.lastTick > 1000000) app.lastTick = now;
     }
 
     void* pixels;
