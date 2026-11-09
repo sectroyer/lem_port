@@ -21,6 +21,7 @@ public:
     void sfx(int id);
     void music(int track);
     void stop();
+    void pauseOutput(bool paused);   // stop or restart the audio device
 
     bool musicOn = true;
     bool sfxOn = true;

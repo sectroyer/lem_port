@@ -89,7 +89,9 @@ tools/ios_install.sh build-ios/Release-iphoneos/Lem_Port.app /path/to/lemmings
   app into the Lem_Port folder; the game starts once the files are there.
 
 Touch controls: tap = click (tap a lemming to assign the selected skill),
-drag the level to scroll, double tap TIME for fast forward, three-finger tap
+long press = assign preferring walking lemmings (right button), drag the
+level to scroll, double tap TIME for fast forward (it then reads FAST),
+three-finger tap
 ends a level, two-finger tap returns to the menu from the preview and result
 screens.
 

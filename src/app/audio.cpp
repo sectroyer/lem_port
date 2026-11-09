@@ -52,6 +52,12 @@ void Audio::music(int track) {
     SDL_UnlockMutex(lock_);
 }
 
+void Audio::pauseOutput(bool paused) {
+    if (!stream_) return;
+    if (paused) SDL_PauseAudioStreamDevice(stream_);
+    else SDL_ResumeAudioStreamDevice(stream_);
+}
+
 void Audio::stop() {
     if (!driver_) return;
     SDL_LockMutex(lock_);

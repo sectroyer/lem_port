@@ -45,6 +45,13 @@ void Frontend::menuTick() {
         if (--b.counter == -17) b.counter = b.reload;
 }
 
+void Frontend::suspend() {
+    if (mode_ == Mode::Playing) paused_ = true;
+    audio_.pauseOutput(true);
+}
+
+void Frontend::resume() { audio_.pauseOutput(false); }
+
 void Frontend::goToMenu() {
     if (game_) audio_.stop();
     game_.reset();
@@ -198,6 +205,7 @@ bool Frontend::handleEvent(const SDL_Event& ev) {
             dragging_ = fingers_ >= 2;
             touchDownX_ = mouseX_;
             touchDownY_ = mouseY_;
+            touchDownFrame_ = frameCounter_;
             dragStartScroll_ = scrollX_;
             break;
         }
@@ -238,7 +246,12 @@ bool Frontend::handleEvent(const SDL_Event& ev) {
             if (!dragging_ && mode_ == Mode::Playing) {
                 mouseX_ = touchDownX_;
                 mouseY_ = touchDownY_;
+                // A long press (about 0.4 s) assigns like a click with the
+                // right button held: walking lemmings are preferred.
+                bool longPress = frameCounter_ - touchDownFrame_ >= 6;
+                rightDown_ = longPress;
                 playClick(mouseX_ / 2, mouseY_ / 2, false, false);
+                rightDown_ = false;
             }
             dragging_ = false;
         }
@@ -489,7 +502,8 @@ void Frontend::drawPanel() {
     int total = std::max(1, game_->lemmingsTotal());
     drawPanelText(23, "IN " + std::to_string(game_->lemmingsIn() * 100 / total) + "%");
     char t[16];
-    std::snprintf(t, sizeof t, "TIME %d-%02d", std::max(0, game_->minutes()), std::max(0, game_->seconds()));
+    std::snprintf(t, sizeof t, "%s %d-%02d", fast_ ? "FAST" : "TIME", std::max(0, game_->minutes()),
+                  std::max(0, game_->seconds()));
     drawPanelText(31, t);
 
     // Button numbers: two 4-pixel digits combined into one 8x8 cell.

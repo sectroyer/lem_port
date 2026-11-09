@@ -176,6 +176,16 @@ SDL_AppResult SDL_AppEvent(void* state, SDL_Event* ev) {
         if (ev->type == SDL_EVENT_MOUSE_BUTTON_DOWN || ev->type == SDL_EVENT_KEY_DOWN) askForFolder(app);
         return SDL_APP_CONTINUE;
     }
+    if (ev->type == SDL_EVENT_DID_ENTER_BACKGROUND || ev->type == SDL_EVENT_WILL_ENTER_BACKGROUND) {
+        app.frontend->suspend();
+        saveConfig(app.config);
+        return SDL_APP_CONTINUE;
+    }
+    if (ev->type == SDL_EVENT_DID_ENTER_FOREGROUND) {
+        app.frontend->resume();
+        app.lastTick = SDL_GetTicksNS() / 1000;
+        return SDL_APP_CONTINUE;
+    }
     SDL_ConvertEventToRenderCoordinates(app.renderer, ev);
     if (ev->type == SDL_EVENT_KEY_DOWN && ev->key.key == SDLK_RETURN && (ev->key.mod & SDL_KMOD_ALT)) {
         bool fs = SDL_GetWindowFlags(app.window) & SDL_WINDOW_FULLSCREEN;

@@ -45,7 +45,7 @@ SDL3 provides the window, input and sound on every target.
 ## Next
 1. [x] iOS build and install instructions in the README
 2. [x] Portable macOS app (SDL built in, universal binary)
-3. [ ] iOS finishing touches: fast-forward indicator, touch alternative for
+3. [x] iOS finishing touches: fast-forward indicator, touch alternative for
        "prefer walkers", pause music in the background
 4. [ ] Linux build test
 5. [ ] More solution replays for the regression tests

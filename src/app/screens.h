@@ -39,6 +39,9 @@ public:
     bool musicOn() const { return audio_.musicOn; }
     bool sfxOn() const { return audio_.sfxOn; }
     void setSound(bool music, bool sfx) { audio_.musicOn = music; audio_.sfxOn = sfx; }
+    // App sent to the background / brought back (mobile platforms).
+    void suspend();
+    void resume();
 
 private:
     enum class Mode { Menu, Code, Help, Preview, Playing, Result };
@@ -115,6 +118,7 @@ private:
     bool dragging_ = false;
     int touchDownX_ = 0, touchDownY_ = 0, dragStartScroll_ = 0;
     int fingers_ = 0;
+    int touchDownFrame_ = 0;      // long press = right button (prefer walkers)
     GameResult result_{};
     int codeFlags_ = 0;           // carried from the last entered code
     std::string codeInput_;
