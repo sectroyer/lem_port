@@ -31,6 +31,18 @@ Frontend::Frontend(const std::string& dataDir, int rating, int level)
     audioOk_ = audio_.open(dataDir);
     loadLevel(rating, level);
     mode_ = Mode::Menu;
+    // Eye blinks of the menu: position, blink graphic and repeat period in
+    // menu frames. The first blinks are staggered by 40 frames.
+    static const int kBlinks[5][4] = {
+        {32, 49, 0, 400}, {256, 47, 1, 440}, {496, 40, 2, 480}, {106, 132, 3, 520}, {235, 132, 5, 560}};
+    for (int i = 0; i < 5; ++i)
+        blinks_.push_back({40 * (i + 1), kBlinks[i][3], kBlinks[i][0], kBlinks[i][1], kBlinks[i][2]});
+}
+
+void Frontend::menuTick() {
+    ++menuFrame_;
+    for (Blink& b : blinks_)
+        if (--b.counter == -17) b.counter = b.reload;
 }
 
 void Frontend::goToMenu() {
@@ -112,6 +124,13 @@ void Frontend::finishLevel() {
 
 void Frontend::update() {
     ++frameCounter_;
+    if (mode_ == Mode::Menu) {
+        menuMicros_ += Game::kFrameMicros;
+        while (menuMicros_ >= 1000000 / 70) {
+            menuMicros_ -= 1000000 / 70;
+            menuTick();
+        }
+    }
     if (mode_ == Mode::Code && codeTimer_ > 0 && --codeTimer_ == 0) goToMenu();
     if (mode_ != Mode::Playing) return;
     if (scrollDir_ == 0 && mouseY_ / 2 < kViewH) {
@@ -552,6 +571,7 @@ void Frontend::drawResult() {
 }
 
 void Frontend::blitMenu(const Bitmap& b, int x0, int y0, bool shadow) {
+    // kTransparent pixels are skipped; opaque bitmaps have none.
     for (int y = 0; y < b.h; ++y)
         for (int x = 0; x < b.w; ++x) {
             uint8_t c = b.at(x, y);
@@ -572,7 +592,51 @@ void Frontend::drawMenu() {
     if (audio_.musicOn) blitMenu(md_.iconMusic, kSign[2][0] + 27, kSign[2][1] + 26, false);
     else if (audio_.sfxOn) blitMenu(md_.iconFx, kSign[2][0] + 27, kSign[2][1] + 26, false);
     // Rating board (stored mayhem, taxing, tricky, fun).
-    blitMenu(md_.ratingSigns[3 - rating_], kSign[3][0] + 32, kSign[3][1] + 24, false);
+    blitMenu(md_.ratingSigns[3 - rating_], 486, 145, false);
+    for (const Blink& b : blinks_)
+        if (b.counter < 0 && b.counter > -17) blitMenu(md_.blinks[b.graphic][(-b.counter - 1) >> 1], b.x, b.y, false);
+
+    // Credits reel at the bottom: a lemming turns a crank at each end and the
+    // text rolls through the reel between them.
+    static const char* kCredits[] = {
+        "Lemmings By DMA Design", "Programming By Russell Kay", "Animation By Gary Timmons",
+        "Graphics By Scott Johnston", "Music By Brian Johnston & Tim Wright", "PC Music By Tony Williams",
+        "Copyright 1991 Psygnosis Ltd.", "lem_port - free native engine"};
+    constexpr int kReelY = kMenuH - 16, kReelX0 = 48, kReelX1 = kMenuW - 48;
+    int anim = (menuFrame_ / 4) % 16;
+    blitMenu(md_.scrollerLeft[anim], 0, kReelY, false);
+    blitMenu(md_.scrollerRight[anim], kMenuW - 48, kReelY, false);
+    int shift = menuFrame_ % 16;
+    for (int x = kReelX0 - shift; x < kReelX1; x += 16) {
+        const Bitmap& r = md_.reel;
+        for (int y = 0; y < r.h; ++y)
+            for (int xx = 0; xx < r.w; ++xx) {
+                int px = x + xx;
+                if (px < kReelX0 || px >= kReelX1 || r.at(xx, y) == kTransparent) continue;
+                menu_.at(px, kReelY + y) = r.at(xx, y);
+            }
+    }
+    // Each line scrolls in from the right, pauses in the middle, and leaves.
+    constexpr int kWidth = kReelX1 - kReelX0;
+    int line = (menuFrame_ / 600) % int(sizeof kCredits / sizeof kCredits[0]);
+    std::string text = kCredits[line];
+    int textW = int(text.size()) * 16, t = menuFrame_ % 600;
+    int centre = kReelX0 + (kWidth - textW) / 2;
+    int x = t < 150 ? kReelX1 - (kReelX1 - centre) * t / 150
+          : t < 450 ? centre
+                    : centre - (centre - kReelX0 + textW) * (t - 450) / 150;
+    for (size_t i = 0; i < text.size(); ++i) {
+        int c = uint8_t(text[i]);
+        if (c < 0x21 || c > 0x7E) continue;
+        const Bitmap& g = md_.menuFont[size_t(c - 0x21)];
+        int gx = x + int(i) * 16;
+        for (int y = 0; y < 16; ++y)
+            for (int xx = 0; xx < 16; ++xx) {
+                int px = gx + xx;
+                if (px < kReelX0 || px >= kReelX1 || g.at(xx, y) == kTransparent) continue;
+                menu_.at(px, kReelY + y) = g.at(xx, y);
+            }
+    }
 }
 
 void Frontend::drawCode() {

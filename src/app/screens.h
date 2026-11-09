@@ -7,6 +7,7 @@
 #include <cstdint>
 #include <memory>
 #include <string>
+#include <vector>
 
 #include "game.h"
 #include "graphicset.h"
@@ -35,6 +36,9 @@ public:
 
     int rating() const { return rating_; }
     int levelNumber() const { return level_; }
+    bool musicOn() const { return audio_.musicOn; }
+    bool sfxOn() const { return audio_.sfxOn; }
+    void setSound(bool music, bool sfx) { audio_.musicOn = music; audio_.sfxOn = sfx; }
 
 private:
     enum class Mode { Menu, Code, Preview, Playing, Result };
@@ -95,7 +99,13 @@ private:
     int musicCounter_ = 0;          // advances through the music list per new level
     Audio audio_;
     bool audioOk_ = false;
-    int lastNukeFrame_ = -100;   // the nuke needs two presses within 5 frames
+    int lastNukeFrame_ = -100;
+    // Main menu animation, run at the 70 Hz display rate of the menu screens.
+    struct Blink { int counter, reload, x, y, graphic; };
+    std::vector<Blink> blinks_;
+    long menuMicros_ = 0;
+    int menuFrame_ = 0;
+    void menuTick();   // the nuke needs two presses within 5 frames
     bool rrFromKeyboard_ = false;
     GameResult result_{};
     int codeFlags_ = 0;           // carried from the last entered code

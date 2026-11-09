@@ -59,6 +59,14 @@ Bitmap transparentZero(Bitmap b) {
     return b;
 }
 
+// Menu bitmaps drawn through a mask use their fourth plane as the mask:
+// only colours 8..15 are visible.
+Bitmap planeThreeMask(Bitmap b) {
+    for (auto& p : b.px)
+        if (p < 8) p = kTransparent;
+    return b;
+}
+
 } // namespace
 
 const AnimSpec& animSpec(Anim a) { return kAnims[int(a)]; }
@@ -106,23 +114,24 @@ MainData loadMainData(const std::string& dataDir) {
 
     const Bytes& s3 = secs[3].data;
     m.menuBackground = decodePlanar(s3, 0x0000, 320, 104, 2);
-    m.logo = transparentZero(decodePlanar(s3, 0x2080, 632, 94, 4));
+    m.logo = planeThreeMask(decodePlanar(s3, 0x2080, 632, 94, 4));
     const int signOffs[6] = {0x9488, 0xA2D4, 0xB120, 0xBF6C, 0xCDB8, 0xDC04};
-    for (int i = 0; i < 6; ++i) m.signs[i] = transparentZero(decodePlanar(s3, signOffs[i], 120, 61, 4));
-    m.iconMusic = transparentZero(decodePlanar(s3, 0xEA50, 64, 31, 4));
-    m.iconFx = transparentZero(decodePlanar(s3, 0xEE30, 64, 31, 4));
+    for (int i = 0; i < 6; ++i) m.signs[i] = planeThreeMask(decodePlanar(s3, signOffs[i], 120, 61, 4));
+    // Sound icons, rating boards and eye blinks are copied without a mask.
+    m.iconMusic = decodePlanar(s3, 0xEA50, 64, 31, 4);
+    m.iconFx = decodePlanar(s3, 0xEE30, 64, 31, 4);
 
     const Bytes& s4 = secs[4].data;
     for (int b = 0; b < 7; ++b)
         for (int f = 0; f < 8; ++f)
-            m.blinks[b].push_back(transparentZero(decodePlanar(s4, 0x600 * b + f * 0xC0, 32, 12, 4)));
+            m.blinks[b].push_back(decodePlanar(s4, 0x600 * b + f * 0xC0, 32, 12, 4));
     for (int f = 0; f < 16; ++f) {
         m.scrollerLeft.push_back(transparentZero(decodePlanar(s4, 0x2A00 + f * 0x180, 48, 16, 4)));
         m.scrollerRight.push_back(transparentZero(decodePlanar(s4, 0x4200 + f * 0x180, 48, 16, 4)));
     }
     m.reel = transparentZero(decodePlanar(s4, 0x5A00, 16, 16, 4));
     for (int i = 0; i < 4; ++i)
-        m.ratingSigns[i] = transparentZero(decodePlanar(s4, 0x5A80 + i * 0x3CC, 72, 27, 4));
+        m.ratingSigns[i] = decodePlanar(s4, 0x5A80 + i * 0x3CC, 72, 27, 4);
     for (int c = 0x21; c <= 0x7E; ++c) {
         size_t off = 0x69B0 + size_t(c - 0x21) * 0x60;
         if (off + 0x60 > s4.size()) break;

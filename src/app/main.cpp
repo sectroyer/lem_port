@@ -43,6 +43,7 @@ void startGame(App& app) {
         int r = app.startRating >= 0 ? app.startRating : app.config.lastRating;
         int n = app.startRating >= 0 ? app.startLevel : app.config.lastLevel;
         app.frontend = std::make_unique<Frontend>(app.config.dataDir, r, n);
+        app.frontend->setSound(app.config.music, app.config.sfx);
         if (app.autoPlay) app.frontend->startLevel();
         SDL_SetWindowTitle(app.window, "lem_port");
     } catch (const std::exception& e) {
@@ -198,6 +199,8 @@ void SDL_AppQuit(void* state, SDL_AppResult) {
         if (app->frontend) {
             app->config.lastRating = app->frontend->rating();
             app->config.lastLevel = app->frontend->levelNumber();
+            app->config.music = app->frontend->musicOn();
+            app->config.sfx = app->frontend->sfxOn();
         }
         app->frontend.reset();
         saveConfig(app->config);

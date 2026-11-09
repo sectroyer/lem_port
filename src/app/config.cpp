@@ -32,6 +32,8 @@ Config loadConfig() {
             else if (k == "scale") c.scale = std::max(1, std::stoi(v));
             else if (k == "rating") c.lastRating = std::stoi(v);
             else if (k == "level") c.lastLevel = std::stoi(v);
+            else if (k == "music") c.music = v == "1";
+            else if (k == "sfx") c.sfx = v == "1";
         } catch (...) {
         }
     }
@@ -43,7 +45,9 @@ void saveConfig(const Config& c) {
     f << "data=" << c.dataDir << "\n"
       << "scale=" << c.scale << "\n"
       << "rating=" << c.lastRating << "\n"
-      << "level=" << c.lastLevel << "\n";
+      << "level=" << c.lastLevel << "\n"
+      << "music=" << (c.music ? 1 : 0) << "\n"
+      << "sfx=" << (c.sfx ? 1 : 0) << "\n";
 }
 
 } // namespace lem

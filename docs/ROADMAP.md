@@ -32,7 +32,8 @@ SDL3 provides the window, input and sound on every target.
 - [x] Level info and result screens
 - [x] Access codes
 - [x] Main menu, code screen, original result messages
-- [ ] Menu animations (blinking eyes, credits scroller)
+- [x] Menu animations (blinking eyes, credits reel)
+- [x] Remember data folder, last level and sound setting
 - [x] Sound effects and music (original AdLib driver + OPL2 emulation)
 - [x] Scaling, fullscreen, pause, fast forward
 

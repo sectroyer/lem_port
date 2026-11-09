@@ -11,6 +11,8 @@ struct Config {
     int scale = 2;
     int lastRating = 0;
     int lastLevel = 0;
+    bool music = true;
+    bool sfx = true;
 };
 
 Config loadConfig();
