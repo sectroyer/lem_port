@@ -29,8 +29,9 @@ SDL3 provides the window, input and sound on every target.
 - [x] Data folder selection (command line, config file, first-run prompt)
 - [x] Level view with scrolling, skill panel, minimap, cursor
 - [x] Level info and result screens
-- [ ] Main menu, passwords
-- [ ] Sound effects and music (recreated where needed)
+- [x] Access codes
+- [ ] Main menu
+- [x] Sound effects and music (original AdLib driver + OPL2 emulation)
 - [x] Scaling, fullscreen, pause, fast forward
 
 ## Phase 4 – Other platforms

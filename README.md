@@ -82,6 +82,7 @@ lemtool gfx    <datadir> <outdir>       # graphics sets as PNG sheets
 lemtool levels <datadir> <outdir>       # every level record as PNG + summary
 lemtool main   <datadir> <outdir>       # sprites, panel, fonts, menu art
 lemtool list   <datadir> [outdir]       # the 120 levels in game order (+ PNGs)
+lemtool audio  <datadir> <music|sfx> <n> <out.wav> [seconds]
 lemtool sim    <datadir> <rating> <n> <outdir> [ticks] [every] [script]
                                         # play a level headless, save snapshots
 ```
@@ -103,10 +104,13 @@ lem_port stands on the shoulders of others:
 * **ccexplore** and **namida** refined Lemmix to match the DOS game even more
   closely; **Aaron Kelley** maintains that work as
   [Lemmix Player](https://github.com/AaronKelley/LemmixPlayer).
+* **Aaron Giles** wrote [ymfm](https://github.com/aaronsgiles/ymfm)
+  (BSD-3-Clause), which emulates the AdLib's FM chip; it is included in
+  `third_party/ymfm`.
 * **ccexplore**, **rt**, **Mindless** and **Simon** documented the original
   file formats and shared that knowledge with the Lemmings community.
 
-Thank you all. No code from these projects is included here.
+Thank you all. Apart from ymfm, no code from these projects is included here.
 
 ## License
 
