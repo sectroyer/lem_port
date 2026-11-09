@@ -43,6 +43,58 @@ cmake --build build
 ctest --test-dir build
 ```
 
+### macOS app to share
+
+```sh
+tools/mac_package.sh build-mac
+```
+
+builds a self-contained universal `Lem_Port.app` (Apple Silicon and Intel,
+macOS 11 or newer, SDL3 built in) and packs it as `build-mac/Lem_Port-macos.zip`.
+The app is signed ad hoc; on another Mac open it the first time with right
+click → Open.
+
+### iOS and iPadOS
+
+Works on iOS 12 and newer (tested on an iPad mini 2 with iOS 12.5). You need
+Xcode, an Apple ID added in Xcode → Settings → Accounts (a free one is fine)
+and, for installing from the command line, libimobiledevice
+(`sudo port install ideviceinstaller` or `brew install ideviceinstaller`).
+
+```sh
+# Xcode project; SDL3 is downloaded and built for iOS
+cmake -S . -B build-ios -G Xcode -DCMAKE_SYSTEM_NAME=iOS \
+      -DCMAKE_OSX_ARCHITECTURES=arm64
+
+# signed build for devices (TEAM = your team id, see below)
+cmake --build build-ios --config Release --target lem_port -- \
+      -sdk iphoneos -allowProvisioningUpdates DEVELOPMENT_TEAM=TEAM
+
+# install on the USB-connected device and copy the game data
+tools/ios_install.sh build-ios/Release-iphoneos/Lem_Port.app /path/to/lemmings
+```
+
+* The team id is the `OU=` value of your signing certificate:
+  `security find-certificate -c "Apple Development" -p | openssl x509 -noout -subject`.
+* A device must be registered with the team once: open
+  `build-ios/lem_port.xcodeproj` in Xcode, choose the device and press Run.
+  Afterwards the build and `ios_install.sh` are enough.
+* With a free Apple ID an installed app runs for 7 days; build and install
+  again to renew it. Updates keep the game data.
+* iOS 12–14 devices need Xcode's support files for that version in
+  `Xcode.app/Contents/Developer/Platforms/iPhoneOS.platform/DeviceSupport`.
+* On the first start, trust the developer on the device: Settings →
+  General → Device Management.
+* The game data can also be copied with Finder (device → Files) or the Files
+  app into the Lem_Port folder; the game starts once the files are there.
+
+Touch controls: tap = click (tap a lemming to assign the selected skill),
+drag the level to scroll, double tap TIME for fast forward, three-finger tap
+ends a level, two-finger tap returns to the menu from the preview and result
+screens.
+
+### Tests
+
 The regression tests in `tests/data_tests.cpp` need the original data and run
 only when `LEM_DATA` points to it (`LEM_DATA=/path/to/lemmings ctest ...`).
 They play the replays in `tests/replays` and check every level against

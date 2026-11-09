@@ -14,7 +14,7 @@ SDL3 provides the window, input and sound on every target.
 - [x] Special sets
 - [x] `main.dat`: lemming animations, masks, panel, fonts, menu art
 - [x] Level order and `oddtable.dat` variations (120 levels in 4 ratings)
-- [ ] Format documentation for each of the above (`docs/formats/`)
+- [x] Format documentation for each of the above (`docs/formats/`)
 
 ## Phase 2 – Simulation
 - [x] Fixed-rate tick loop, deterministic
@@ -38,5 +38,17 @@ SDL3 provides the window, input and sound on every target.
 - [x] Scaling, fullscreen, pause, fast forward
 
 ## Phase 4 – Other platforms
+- [x] iOS/iPadOS build (iOS 12+, tested on iPad mini 2), touch controls,
+      install script
 - [ ] WebAssembly build (Emscripten), data supplied by file picker
-- [ ] iOS/iPadOS build, touch controls
+
+## Next
+1. [x] iOS build and install instructions in the README
+2. [x] Portable macOS app (SDL built in, universal binary)
+3. [ ] iOS finishing touches: fast-forward indicator, touch alternative for
+       "prefer walkers", pause music in the background
+4. [ ] Linux build test
+5. [ ] More solution replays for the regression tests
+6. [ ] Browser version (WebAssembly)
+7. [ ] Remaining edge cases that need a memory dump of the original game
+       (reads above/below the level)
