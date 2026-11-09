@@ -78,7 +78,31 @@ void SDLCALL onFolderChosen(void* userdata, const char* const* files, int) {
     saveConfig(app.config);
 }
 
+#ifdef SDL_PLATFORM_IOS
+// On iOS the data is copied into the app's Documents folder (visible in the
+// Files app and in Finder). Accept the files there or in any direct subfolder.
+std::string findDocumentsData() {
+    const char* docs = SDL_GetUserFolder(SDL_FOLDER_DOCUMENTS);
+    if (!docs) return {};
+    std::string base = docs;
+    if (isDataDir(base)) return base;
+    int count = 0;
+    std::string found;
+    if (char** names = SDL_GlobDirectory(docs, "*", 0, &count)) {
+        for (int i = 0; i < count && found.empty(); ++i) {
+            std::string sub = base + (base.empty() || base.back() == '/' ? "" : "/") + names[i];
+            if (isDataDir(sub)) found = sub;
+        }
+        SDL_free(names);
+    }
+    return found;
+}
+#endif
+
 void askForFolder(App& app) {
+#ifdef SDL_PLATFORM_IOS
+    return;   // no folder picker: the files are copied into Documents instead
+#endif
     if (app.waitingForFolder) return;
     app.waitingForFolder = true;
     SDL_ShowOpenFolderDialog(onFolderChosen, &app, app.window, nullptr, false);
@@ -114,19 +138,28 @@ SDL_AppResult SDL_AppInit(void** state, int argc, char** argv) {
     }
     if (const char* env = SDL_getenv("LEM_DATA"); env && app->config.dataDir.empty())
         app->config.dataDir = env;
+#ifdef SDL_PLATFORM_IOS
+    if (!isDataDir(app->config.dataDir)) app->config.dataDir = findDocumentsData();
+    SDL_SetHint(SDL_HINT_ORIENTATIONS, "LandscapeLeft LandscapeRight");
+    const SDL_WindowFlags flags = SDL_WINDOW_FULLSCREEN | SDL_WINDOW_HIGH_PIXEL_DENSITY;
+#else
+    const SDL_WindowFlags flags = SDL_WINDOW_RESIZABLE;
+#endif
 
     if (!SDL_CreateWindowAndRenderer("lem_port", kScreenW * app->config.scale,
-                                     kScreenH * app->config.scale, SDL_WINDOW_RESIZABLE,
+                                     kScreenH * app->config.scale, flags,
                                      &app->window, &app->renderer)) {
         SDL_Log("window: %s", SDL_GetError());
         return SDL_APP_FAILURE;
     }
+    // Fit any window or screen; the pixel art scaler keeps pixels crisp at
+    // non-integer sizes (iPad 1.6x, phones, odd desktop windows).
     SDL_SetRenderLogicalPresentation(app->renderer, kScreenW, kScreenH,
-                                     SDL_LOGICAL_PRESENTATION_INTEGER_SCALE);
+                                     SDL_LOGICAL_PRESENTATION_LETTERBOX);
     SDL_SetRenderVSync(app->renderer, 1);
     app->texture = SDL_CreateTexture(app->renderer, SDL_PIXELFORMAT_XRGB8888,
                                      SDL_TEXTUREACCESS_STREAMING, kScreenW, kScreenH);
-    SDL_SetTextureScaleMode(app->texture, SDL_SCALEMODE_NEAREST);
+    SDL_SetTextureScaleMode(app->texture, SDL_SCALEMODE_PIXELART);
     SDL_HideCursor();
 
     if (isDataDir(app->config.dataDir)) startGame(*app);
@@ -155,11 +188,20 @@ SDL_AppResult SDL_AppEvent(void* state, SDL_Event* ev) {
 
 SDL_AppResult SDL_AppIterate(void* state) {
     App& app = *static_cast<App*>(state);
+#ifdef SDL_PLATFORM_IOS
+    // Wait for the files to appear in Documents (checked about once a second).
+    static Uint64 lastScan = 0;
+    if (!app.frontend && SDL_GetTicks() - lastScan > 1000) {
+        lastScan = SDL_GetTicks();
+        app.config.dataDir = findDocumentsData();
+        if (!app.config.dataDir.empty()) saveConfig(app.config);
+    }
+#endif
     if (!app.frontend && isDataDir(app.config.dataDir)) startGame(app);
 
     Uint64 now = SDL_GetTicksNS() / 1000;   // microseconds
     if (app.frontend) {
-        // Fixed 60 ms game frames, catching up at most a few frames.
+        // Fixed game frames (68.7 ms), catching up at most a few frames.
         int steps = 0;
         if (!app.shotPath.empty()) {
             // Test mode: run as fast as possible.
@@ -197,9 +239,16 @@ SDL_AppResult SDL_AppIterate(void* state) {
     SDL_RenderTexture(app.renderer, app.texture, nullptr, nullptr);
     if (!app.frontend) {
         SDL_SetRenderDrawColor(app.renderer, 200, 200, 200, 255);
+#ifdef SDL_PLATFORM_IOS
+        SDL_RenderDebugText(app.renderer, 24, 80, "Copy the DOS Lemmings data files (main.dat,");
+        SDL_RenderDebugText(app.renderer, 24, 92, "level000.dat, ...) into the lem_port folder");
+        SDL_RenderDebugText(app.renderer, 24, 104, "with the Files app or Finder. The game starts");
+        SDL_RenderDebugText(app.renderer, 24, 116, "as soon as the files are there.");
+#else
         SDL_RenderDebugText(app.renderer, 24, 80, "Choose the folder with the DOS");
         SDL_RenderDebugText(app.renderer, 24, 92, "Lemmings data files (main.dat...)");
         SDL_RenderDebugText(app.renderer, 24, 116, "Click to open the folder dialog");
+#endif
     }
     SDL_RenderPresent(app.renderer);
     return SDL_APP_CONTINUE;

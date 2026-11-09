@@ -134,7 +134,7 @@ void Frontend::update() {
     }
     if (mode_ == Mode::Code && codeTimer_ > 0 && --codeTimer_ == 0) goToMenu();
     if (mode_ != Mode::Playing) return;
-    if (scrollDir_ == 0 && mouseY_ / 2 < kViewH) {
+    if (scrollDir_ == 0 && !touchInput_ && mouseY_ / 2 < kViewH) {
         if (mouseX_ <= 1) scrollX_ -= kScrollStep;
         else if (mouseX_ >= kScreenW - 2) scrollX_ += kScrollStep;
     }
@@ -162,15 +162,45 @@ void Frontend::update() {
 bool Frontend::handleEvent(const SDL_Event& ev) {
     switch (ev.type) {
     case SDL_EVENT_MOUSE_MOTION:
+        touchInput_ = ev.motion.which == SDL_TOUCH_MOUSEID;
         mouseX_ = std::clamp(int(ev.motion.x), 0, kScreenW - 1);
         mouseY_ = std::clamp(int(ev.motion.y), 0, kScreenH - 1);
+        if (touchPending_ && mode_ == Mode::Playing) {
+            int dx = mouseX_ - touchDownX_;
+            if (!dragging_ && std::abs(dx) > 12) dragging_ = true;
+            if (dragging_) scrollX_ = std::clamp(dragStartScroll_ - dx / 2, 0, kLevelWidth - kPlayW);
+            break;
+        }
         if (game_) game_->setCursor(cursorGameX(), cursorGameY(), rightDown_);
+        break;
+    case SDL_EVENT_FINGER_DOWN:
+        ++fingers_;
+        if (fingers_ >= 2) {
+            dragging_ = true;   // not a tap any more
+            // Two fingers act as the right button / Esc, three end the level.
+            if (mode_ == Mode::Result || mode_ == Mode::Preview || mode_ == Mode::Help) goToMenu();
+            else if (mode_ == Mode::Playing && fingers_ >= 3) finishLevel();
+        }
+        break;
+    case SDL_EVENT_FINGER_UP:
+    case SDL_EVENT_FINGER_CANCELED:
+        fingers_ = std::max(0, fingers_ - 1);
         break;
     case SDL_EVENT_MOUSE_BUTTON_DOWN: {
         bool right = ev.button.button == SDL_BUTTON_RIGHT;
         if (right) rightDown_ = true;
+        touchInput_ = ev.button.which == SDL_TOUCH_MOUSEID;
         mouseX_ = std::clamp(int(ev.button.x), 0, kScreenW - 1);
         mouseY_ = std::clamp(int(ev.button.y), 0, kScreenH - 1);
+        if (touchInput_ && mode_ == Mode::Playing && mouseY_ / 2 < kViewH) {
+            // Decide on release whether this was a tap (assign) or a drag (scroll).
+            touchPending_ = true;
+            dragging_ = fingers_ >= 2;
+            touchDownX_ = mouseX_;
+            touchDownY_ = mouseY_;
+            dragStartScroll_ = scrollX_;
+            break;
+        }
         if (mode_ == Mode::Menu) {
             // Signs: F1 play, F2 code, F3 sound, rating, exit (F4 has no function).
             static const int kItem[6] = {0, 1, 2, 3, 4, 5};
@@ -203,6 +233,15 @@ bool Frontend::handleEvent(const SDL_Event& ev) {
     case SDL_EVENT_MOUSE_BUTTON_UP:
         if (ev.button.button == SDL_BUTTON_RIGHT) rightDown_ = false;
         rrHeld_ = 0;
+        if (touchPending_) {
+            touchPending_ = false;
+            if (!dragging_ && mode_ == Mode::Playing) {
+                mouseX_ = touchDownX_;
+                mouseY_ = touchDownY_;
+                playClick(mouseX_ / 2, mouseY_ / 2, false, false);
+            }
+            dragging_ = false;
+        }
         break;
     case SDL_EVENT_KEY_DOWN: {
         SDL_Keycode k = ev.key.key;
@@ -387,6 +426,8 @@ void Frontend::drawPlay() {
     drawPanel();
 
     // Cursor: a box around a lemming under it, otherwise a crosshair.
+    // Touch screens have no pointer to show.
+    if (touchInput_) return;
     int cx = mouseX_ / 2, cy = mouseY_ / 2;
     auto put = [&](int x, int y) {
         if (x >= 0 && y >= 0 && x < kPlayW && y < kPlayH) play_.at(x, y) = kWhite;

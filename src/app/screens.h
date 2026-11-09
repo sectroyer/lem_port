@@ -108,6 +108,12 @@ private:
     int menuFrame_ = 0;
     void menuTick();   // the nuke needs two presses within 5 frames
     bool rrFromKeyboard_ = false;
+    // Touch input: taps act as left clicks, drags scroll the level.
+    bool touchInput_ = false;
+    bool touchPending_ = false;   // finger down in the level, tap or drag not decided
+    bool dragging_ = false;
+    int touchDownX_ = 0, touchDownY_ = 0, dragStartScroll_ = 0;
+    int fingers_ = 0;
     GameResult result_{};
     int codeFlags_ = 0;           // carried from the last entered code
     std::string codeInput_;

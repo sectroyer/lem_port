@@ -1,7 +1,8 @@
 #!/usr/bin/env python3
 """Generates the application icon (original pixel art) as a 1024x1024 PNG.
 
-usage: make_icon.py out.png
+usage: make_icon.py out.png [--square]
+--square: opaque square without rounded corners (iOS rounds icons itself)
 """
 import struct
 import sys
@@ -36,12 +37,15 @@ BG_TOP, BG_BOTTOM = (60, 30, 20), (120, 70, 40)
 SIZE, CELL, MARGIN = 1024, 56, 64
 
 
+SQUARE = "--square" in sys.argv
+
+
 def pixel(x, y):
     # Rounded-square background with a vertical gradient.
-    r = 180
+    r = 0 if SQUARE else 180
     cx = min(max(x, r), SIZE - 1 - r)
     cy = min(max(y, r), SIZE - 1 - r)
-    if (x - cx) ** 2 + (y - cy) ** 2 > r * r:
+    if r and (x - cx) ** 2 + (y - cy) ** 2 > r * r:
         return (0, 0, 0, 0)
     t = y / (SIZE - 1)
     bg = tuple(int(a + (b - a) * t) for a, b in zip(BG_TOP, BG_BOTTOM))
@@ -63,13 +67,14 @@ def main():
     for y in range(SIZE):
         raw.append(0)
         for x in range(SIZE):
-            raw.extend(pixel(x, y))
+            p = pixel(x, y)
+            raw.extend(p[:3] if SQUARE else p)
 
     def chunk(tag, data):
         return struct.pack(">I", len(data)) + tag + data + struct.pack(">I", zlib.crc32(tag + data))
 
     png = b"\x89PNG\r\n\x1a\n"
-    png += chunk(b"IHDR", struct.pack(">IIBBBBB", SIZE, SIZE, 8, 6, 0, 0, 0))
+    png += chunk(b"IHDR", struct.pack(">IIBBBBB", SIZE, SIZE, 8, 2 if SQUARE else 6, 0, 0, 0))
     png += chunk(b"IDAT", zlib.compress(bytes(raw), 9))
     png += chunk(b"IEND", b"")
     with open(sys.argv[1], "wb") as f:
