@@ -1,6 +1,6 @@
-# lemport
+# lem_port
 
-**lemport** brings the 1991 DOS release of *Lemmings* to modern systems –
+**lem_port** brings the 1991 DOS release of *Lemmings* to modern systems –
 natively, without an emulator.
 
 It is not a remake and not a reinterpretation. The aim is to play the
@@ -14,7 +14,7 @@ The best-known faithful recreation of DOS Lemmings is
 remarkable piece of work that captures the original down to its quirks.
 Lemmix, however, is written in Delphi and runs only on Windows.
 
-lemport follows the same path with the same goal of accuracy, written in
+lem_port follows the same path with the same goal of accuracy, written in
 portable C++20 on top of SDL3, so the game can be enjoyed on:
 
 * **Linux**
@@ -28,7 +28,7 @@ layer for the window, input and sound.
 ## Game data
 
 The original game files are **not** included and never will be. You need
-your own copy of the DOS version of *Lemmings*. Point lemport at the folder
+your own copy of the DOS version of *Lemmings*. Point lem_port at the folder
 that contains `main.dat`, `level000.dat`, `vgagr0.dat` and the other data
 files – upper or lower case names both work.
 
@@ -65,7 +65,7 @@ lemtool list   <datadir> [outdir]       # the 120 levels in game order (+ PNGs)
 
 ## Acknowledgements
 
-lemport stands on the shoulders of others:
+lem_port stands on the shoulders of others:
 
 * **DMA Design** created *Lemmings*, published by **Psygnosis** in 1991.
   The game and its data remain the property of their copyright holders.
@@ -83,7 +83,7 @@ Thank you all. No code from these projects is included here.
 
 Copyright © 2026 Michał Majchrowicz
 
-lemport is free software: you can redistribute it and/or modify it under the
+lem_port is free software: you can redistribute it and/or modify it under the
 terms of the GNU General Public License as published by the Free Software
 Foundation, either version 3 of the License, or (at your option) any later
 version. See [LICENSE](LICENSE) for details.
