@@ -18,12 +18,13 @@ SDL3 provides the window, input and sound on every target.
 
 ## Phase 2 – Simulation
 - [x] Fixed-rate tick loop, deterministic
-- [ ] Replays (record/playback of player actions)
+- [x] Replays (record/playback of player actions)
 - [x] Terrain/steel/object maps, trigger grid
 - [x] Lemming states: walk, fall, climb, float, splat, block, build, bash,
       mine, dig, bomb, exit, drown, burn, traps
 - [x] Release rate, nuke, time limit, win/lose
-- [ ] Regression tests with recorded solutions
+- [x] Regression tests: solution replays, replay determinism and golden
+      results for all 120 levels
 
 ## Phase 3 – Desktop frontend (SDL3)
 - [x] Data folder selection (command line, config file, first-run prompt)

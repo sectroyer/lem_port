@@ -2,6 +2,7 @@
 #include "game.h"
 
 #include <algorithm>
+#include <cstdio>
 
 #include "levelrender.h"
 
@@ -351,6 +352,8 @@ void Game::advanceIntro() {
 
 void Game::tickPaused() {
     if (finished_) return;
+    record('P');
+    ++frameCount_;
     updateReleaseRate();
     if (!entriesOpen_) advanceIntro();
 }
@@ -359,6 +362,7 @@ void Game::tick() {
     if (finished_) return;
     checkFinished();
     if (finished_) return;
+    ++frameCount_;
 
     updateReleaseRate();
     advanceIntro();
@@ -897,6 +901,7 @@ bool Game::handleExploding(Lemming& l) {
 // Input
 
 void Game::setCursor(int x, int y, bool rightButton) {
+    if (x != cursorX_ || y != cursorY_ || rightButton != rightButton_) record('C', x, y, rightButton);
     cursorX_ = x;
     cursorY_ = y;
     rightButton_ = rightButton;
@@ -905,10 +910,14 @@ void Game::setCursor(int x, int y, bool rightButton) {
     hovered_ = a;
 }
 
-void Game::setReleaseRateChange(int dir) { rrChange_ = dir; }
+void Game::setReleaseRateChange(int dir) {
+    if (dir != rrChange_) record('R', dir);
+    rrChange_ = dir;
+}
 
 void Game::nuke() {
     if (nuking_) return;
+    record('N');
     nuking_ = true;
     // As in the original, only released lemmings count towards the result.
     maxLemmings_ = lemmingsReleased_;
@@ -937,6 +946,7 @@ void Game::hitTest(int& first, int& second, int& count) {
 }
 
 bool Game::assignSkill(Skill s) {
+    record('A', s);
     int a, b, n;
     hitTest(a, b, n);
     if (n == 0) return false;
@@ -1113,6 +1123,77 @@ void Game::render(Bitmap& out) const {
             }
         }
     }
+}
+
+// ---------------------------------------------------------------------------
+// Replays
+
+void Game::record(char type, int a, int b, int c) {
+    events_.push_back({frameCount_, type, a, b, c});
+}
+
+Replay Game::recording(int rating, int number) const {
+    Replay r;
+    r.rating = rating;
+    r.number = number;
+    r.frames = frameCount_;
+    r.events = events_;
+    return r;
+}
+
+void Game::play(const Replay& replay) {
+    size_t e = 0;
+    for (int f = 0; f < replay.frames && !finished_; ++f) {
+        bool paused = false;
+        for (; e < replay.events.size() && replay.events[e].frame == f; ++e) {
+            const ReplayEvent& ev = replay.events[e];
+            switch (ev.type) {
+            case 'C': setCursor(ev.a, ev.b, ev.c != 0); break;
+            case 'A': assignSkill(Skill(ev.a)); break;
+            case 'R': setReleaseRateChange(ev.a); break;
+            case 'N': nuke(); break;
+            case 'P': paused = true; break;
+            default: break;
+            }
+        }
+        if (paused) tickPaused();
+        else tick();
+    }
+}
+
+std::string Replay::save() const {
+    std::string s = "lem_port replay 1\n";
+    s += "level " + std::to_string(rating) + " " + std::to_string(number) + "\n";
+    for (const ReplayEvent& e : events) {
+        s += std::to_string(e.frame) + " " + e.type;
+        if (e.type == 'C') s += " " + std::to_string(e.a) + " " + std::to_string(e.b) + " " + std::to_string(e.c);
+        else if (e.type == 'A' || e.type == 'R') s += " " + std::to_string(e.a);
+        s += "\n";
+    }
+    s += "end " + std::to_string(frames) + "\n";
+    return s;
+}
+
+bool Replay::parse(const std::string& text, Replay& out) {
+    out = Replay{};
+    size_t pos = 0;
+    bool header = false, ended = false;
+    while (pos < text.size()) {
+        size_t nl = text.find('\n', pos);
+        std::string line = text.substr(pos, nl == std::string::npos ? std::string::npos : nl - pos);
+        pos = nl == std::string::npos ? text.size() : nl + 1;
+        if (line.empty() || line[0] == '#') continue;
+        if (line.rfind("lem_port replay", 0) == 0) { header = true; continue; }
+        if (std::sscanf(line.c_str(), "level %d %d", &out.rating, &out.number) == 2) continue;
+        if (std::sscanf(line.c_str(), "end %d", &out.frames) == 1) { ended = true; continue; }
+        ReplayEvent e;
+        char t = 0;
+        int n = std::sscanf(line.c_str(), "%d %c %d %d %d", &e.frame, &t, &e.a, &e.b, &e.c);
+        if (n < 2) return false;
+        e.type = t;
+        out.events.push_back(e);
+    }
+    return header && ended;
 }
 
 } // namespace lem

@@ -1,6 +1,9 @@
 // SPDX-License-Identifier: GPL-3.0-or-later
 #include "screens.h"
 
+#include <SDL3/SDL_filesystem.h>
+#include <SDL3/SDL_stdinc.h>
+
 #include <algorithm>
 #include <cctype>
 #include <cstdio>
@@ -97,6 +100,12 @@ void Frontend::startPlaying() {
 
 void Frontend::finishLevel() {
     result_ = game_->result();
+    // Keep the replay of the last attempt next to the settings.
+    if (char* base = SDL_GetPrefPath("lem_port", "lem_port")) {
+        std::string text = game_->recording(rating_, level_).save();
+        writeFile(std::string(base) + "last.lrp", Bytes(text.begin(), text.end()));
+        SDL_free(base);
+    }
     mode_ = Mode::Result;
     audio_.stop();
 }

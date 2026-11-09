@@ -43,6 +43,11 @@ cmake --build build
 ctest --test-dir build
 ```
 
+The regression tests in `tests/data_tests.cpp` need the original data and run
+only when `LEM_DATA` points to it (`LEM_DATA=/path/to/lemmings ctest ...`).
+They play the replays in `tests/replays` and check every level against
+`tests/golden.txt`.
+
 On macOS with MacPorts, add `-DCMAKE_PREFIX_PATH=/opt/local` to the first
 command.
 
@@ -86,6 +91,7 @@ lemtool levels <datadir> <outdir>       # every level record as PNG + summary
 lemtool main   <datadir> <outdir>       # sprites, panel, fonts, menu art
 lemtool list   <datadir> [outdir]       # the 120 levels in game order (+ PNGs)
 lemtool audio  <datadir> <music|sfx> <n> <out.wav> [seconds]
+lemtool replay <datadir> <file.lrp>     # play a replay, print the result
 lemtool sim    <datadir> <rating> <n> <outdir> [ticks] [every] [script]
                                         # play a level headless, save snapshots
 ```

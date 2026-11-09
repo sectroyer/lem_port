@@ -60,4 +60,11 @@ if(LEM_BUILD_TESTS)
   add_executable(lemtests tests/test_main.cpp)
   target_link_libraries(lemtests PRIVATE lemcore)
   add_test(NAME lemtests COMMAND lemtests)
+
+  # Regression tests with the original data (skipped unless LEM_DATA is set).
+  add_executable(data_tests tests/data_tests.cpp)
+  target_link_libraries(data_tests PRIVATE lemcore)
+  add_test(NAME data_tests COMMAND data_tests ${CMAKE_SOURCE_DIR}/tests/replays
+                                              ${CMAKE_SOURCE_DIR}/tests/golden.txt)
+  set_tests_properties(data_tests PROPERTIES SKIP_RETURN_CODE 77)
 endif()

@@ -1,0 +1,15 @@
+lem_port replay 1
+# expect rescued 10 frames 604
+level 0 1
+59 C 550 32 0
+59 A 1
+87 A 1
+115 A 1
+143 A 1
+171 A 1
+199 A 1
+227 A 1
+255 A 1
+283 A 1
+311 A 1
+end 604

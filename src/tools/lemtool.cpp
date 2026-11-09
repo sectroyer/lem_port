@@ -265,10 +265,36 @@ int cmdSim(int argc, char** argv) {
             std::printf("\n");
         }
     }
+    std::string rp = game.recording(rating, number).save();
+    writeFile(out + "/replay.lrp", Bytes(rp.begin(), rp.end()));
     GameResult r = game.result();
     std::printf("finished=%d iteration=%d rescued %d/%d (%d%% of %d%% needed) %s\n", game.finished(),
                 game.iteration(), r.rescued, r.total, r.achieved, r.needed, r.success ? "SUCCESS" : "fail");
     return 0;
+}
+
+// Plays a recorded replay and prints the outcome.
+int cmdReplay(int argc, char** argv) {
+    if (argc < 4) { std::fprintf(stderr, "usage: lemtool replay <datadir> <file.lrp>\n"); return 1; }
+    std::string dir = argv[2];
+    Bytes text = readFile(argv[3]);
+    Replay rp;
+    if (!Replay::parse(std::string(text.begin(), text.end()), rp)) { std::fprintf(stderr, "bad replay\n"); return 1; }
+    LevelPack pack(dir);
+    Level L = pack.level(rp.rating, rp.number);
+    GraphicSet gs = loadGraphicSet(dir, L.graphicSet);
+    SpecialSet spec;
+    if (L.specialSet) spec = loadSpecialSet(dir, L.specialSet - 1);
+    MainData md = loadMainData(dir);
+    AnimSet anims(md);
+    Game game(L, gs, L.specialSet ? &spec : nullptr, anims, md);
+    game.play(rp);
+    while (!game.finished() && game.frameCount() < rp.frames + 100000) game.tick();
+    GameResult r = game.result();
+    std::printf("%s %d \"%s\": rescued %d/%d (%d%%, needed %d%%) frames %d %s\n", ratingName(rp.rating),
+                rp.number + 1, L.name.c_str(), r.rescued, r.total, r.achieved, r.needed, game.frameCount(),
+                r.success ? "SUCCESS" : "fail");
+    return r.success ? 0 : 2;
 }
 
 // Renders a music track or a sound effect of the AdLib driver to a WAV file.
@@ -318,6 +344,7 @@ int main(int argc, char** argv) {
         if (!std::strcmp(argv[1], "list")) return cmdList(argc, argv);
         if (!std::strcmp(argv[1], "sim")) return cmdSim(argc, argv);
         if (!std::strcmp(argv[1], "audio")) return cmdAudio(argc, argv);
+        if (!std::strcmp(argv[1], "replay")) return cmdReplay(argc, argv);
         std::fprintf(stderr, "unknown command %s\n", argv[1]);
     } catch (const std::exception& e) {
         std::fprintf(stderr, "error: %s\n", e.what());

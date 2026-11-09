@@ -5,6 +5,7 @@
 
 #include <array>
 #include <cstdint>
+#include <string>
 #include <vector>
 
 #include "bitmap.h"
@@ -79,6 +80,23 @@ struct ObjectState {
     bool triggered = false;
 };
 
+// One recorded player input. `frame` is the number of frames played before it.
+struct ReplayEvent {
+    int frame = 0;
+    char type = 0;   // 'C' cursor (a=x, b=y, c=right button), 'A' assign (a=skill),
+                     // 'R' release rate change (a=dir), 'N' nuke, 'P' paused frame
+    int a = 0, b = 0, c = 0;
+};
+
+struct Replay {
+    int rating = 0, number = 0;   // level in game order
+    int frames = 0;               // total frames played
+    std::vector<ReplayEvent> events;
+
+    std::string save() const;
+    static bool parse(const std::string& text, Replay& out);
+};
+
 struct GameResult {
     int total = 0;       // lemmings counted for the percentage
     int rescued = 0;
@@ -108,6 +126,11 @@ public:
     // Called once per frame while the game is paused: only the opening sequence
     // and (keyboard) release rate changes continue, as in the original.
     void tickPaused();
+
+    // Every input is recorded; `replay` drives a fresh game through it.
+    Replay recording(int rating, int number) const;
+    void play(const Replay& replay);
+    int frameCount() const { return frameCount_; }
 
     // State.
     bool finished() const { return finished_; }
@@ -224,6 +247,10 @@ private:
     bool rightButton_ = false;
     int hovered_ = -1, hoverCount_ = 0;
     int lastPrimary_ = -1;
+
+    std::vector<ReplayEvent> events_;
+    int frameCount_ = 0;
+    void record(char type, int a = 0, int b = 0, int c = 0);
 };
 
 } // namespace lem
