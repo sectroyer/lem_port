@@ -34,3 +34,15 @@ lemtool list   <datadir> [outdir]       # 120 levels in game order (+ PNGs)
 
 * [docs/ROADMAP.md](docs/ROADMAP.md) – plan and progress
 * [docs/formats/](docs/formats/README.md) – data file formats
+
+## License
+
+Copyright (C) 2026 Michał Majchrowicz
+
+This program is free software: you can redistribute it and/or modify it
+under the terms of the GNU General Public License as published by the Free
+Software Foundation, either version 3 of the License, or (at your option)
+any later version. See [LICENSE](LICENSE).
+
+The original game data is not part of this project and is not covered by
+this license.

@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: GPL-3.0-or-later
 // Indexed-colour bitmaps and planar bitmap decoding.
 // See docs/formats/planar-bitmaps.md.
 #pragma once

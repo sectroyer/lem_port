@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: GPL-3.0-or-later
 // Builds the terrain bitmap of a level from its pieces.
 #pragma once
 

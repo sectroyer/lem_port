@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: GPL-3.0-or-later
 // Level definition (2048-byte record stored in levelXXX.dat sections).
 // See docs/formats/level.md.
 #pragma once

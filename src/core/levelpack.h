@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: GPL-3.0-or-later
 // The 120 levels of the original game: ratings, order and variations.
 // See docs/formats/level-order.md.
 #pragma once

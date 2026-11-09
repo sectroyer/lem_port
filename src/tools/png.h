@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: GPL-3.0-or-later
 // Minimal PNG writer (uncompressed deflate blocks) for debug exports.
 #pragma once
 

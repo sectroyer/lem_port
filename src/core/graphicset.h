@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: GPL-3.0-or-later
 // Graphics sets: groundXo.dat metadata + vgagrX.dat bitmaps, and the
 // full-terrain special sets in vgaspecX.dat.
 // See docs/formats/graphics-set.md and docs/formats/special-set.md.

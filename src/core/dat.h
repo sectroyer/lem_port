@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: GPL-3.0-or-later
 // Decoder for the compressed .DAT container used by most game data files.
 // See docs/formats/dat-compression.md.
 #pragma once

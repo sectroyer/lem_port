@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: GPL-3.0-or-later
 // Command line utility for inspecting and exporting original game data.
 #include <cstdio>
 #include <cstring>

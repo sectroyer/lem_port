@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: GPL-3.0-or-later
 // Unit tests that do not need the original game data.
 #include <cstdio>
 #include <cstdlib>
