@@ -4,7 +4,9 @@
 #include <SDL3/SDL.h>
 #include <SDL3/SDL_main.h>
 
+#include <climits>
 #include <cstdio>
+#include <cstdlib>
 #include <cstring>
 #include <filesystem>
 #include <memory>
@@ -32,6 +34,17 @@ struct App {
     int shotFrames = 0;
     int framesRun = 0;
 };
+
+// Stores folders as absolute paths so the app works from any start directory.
+std::string absolutePath(const std::string& p) {
+#ifdef _WIN32
+    char buf[_MAX_PATH];
+    return _fullpath(buf, p.c_str(), sizeof buf) ? std::string(buf) : p;
+#else
+    char buf[PATH_MAX];
+    return realpath(p.c_str(), buf) ? std::string(buf) : p;
+#endif
+}
 
 bool isDataDir(const std::string& dir) {
     return !dir.empty() && std::filesystem::exists(joinPath(dir, "main.dat")) &&
@@ -85,7 +98,7 @@ SDL_AppResult SDL_AppInit(void** state, int argc, char** argv) {
     app->config = loadConfig();
     for (int i = 1; i < argc; ++i) {
         if (!std::strcmp(argv[i], "--data") && i + 1 < argc) {
-            app->config.dataDir = argv[++i];
+            app->config.dataDir = absolutePath(argv[++i]);
             saveConfig(app->config);
         } else if (!std::strcmp(argv[i], "--scale") && i + 1 < argc) {
             app->config.scale = std::max(1, std::atoi(argv[++i]));
