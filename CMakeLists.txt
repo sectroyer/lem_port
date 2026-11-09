@@ -22,6 +22,7 @@ add_library(lemcore STATIC
   src/core/level.cpp
   src/core/graphicset.cpp
   src/core/levelrender.cpp
+  src/core/maindat.cpp
 )
 target_include_directories(lemcore PUBLIC src/core)
 

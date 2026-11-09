@@ -8,6 +8,7 @@
 #include "graphicset.h"
 #include "level.h"
 #include "levelrender.h"
+#include "maindat.h"
 #include "png.h"
 
 using namespace lem;
@@ -118,6 +119,47 @@ int cmdGfx(int argc, char** argv) {
     return 0;
 }
 
+int cmdMain(int argc, char** argv) {
+    if (argc < 4) { std::fprintf(stderr, "usage: lemtool main <datadir> <outdir>\n"); return 1; }
+    std::string dir = argv[2], out = argv[3];
+    std::filesystem::create_directories(out);
+    MainData m = loadMainData(dir);
+    GraphicSet gs = loadGraphicSet(dir, 0);
+    Palette lvl = levelPalette(gs.vgaCustom);
+    Palette menu = menuPalette();
+
+    std::vector<const Bitmap*> lem;
+    for (auto& a : m.anims) for (auto& f : a) lem.push_back(&f);
+    savePng(out + "/lemmings.png", sheet(lem, 400), lvl);
+    std::vector<const Bitmap*> masks;
+    for (auto& a : m.masks) for (auto& f : a) masks.push_back(&f);
+    for (auto& d : m.countdown) masks.push_back(&d);
+    for (int d = 0; d < 10; ++d) masks.push_back(&m.skillDigitL[d]), masks.push_back(&m.skillDigitR[d]);
+    savePng(out + "/masks.png", sheet(masks, 200), lvl);
+    savePng(out + "/panel.png", m.panel, lvl);
+    std::vector<const Bitmap*> pf;
+    for (auto& c : m.panelFont) pf.push_back(&c);
+    savePng(out + "/panelfont.png", sheet(pf, 400), lvl);
+
+    savePng(out + "/menu_bg.png", m.menuBackground, menu);
+    savePng(out + "/logo.png", m.logo, menu);
+    std::vector<const Bitmap*> misc;
+    for (auto& s : m.signs) misc.push_back(&s);
+    misc.push_back(&m.iconMusic); misc.push_back(&m.iconFx);
+    for (auto& s : m.ratingSigns) misc.push_back(&s);
+    savePng(out + "/signs.png", sheet(misc, 640), menu);
+    std::vector<const Bitmap*> anim;
+    for (auto& b : m.blinks) for (auto& f : b) anim.push_back(&f);
+    for (auto& f : m.scrollerLeft) anim.push_back(&f);
+    for (auto& f : m.scrollerRight) anim.push_back(&f);
+    anim.push_back(&m.reel);
+    savePng(out + "/menu_anims.png", sheet(anim, 400), menu);
+    std::vector<const Bitmap*> font;
+    for (auto& c : m.menuFont) font.push_back(&c);
+    savePng(out + "/menufont.png", sheet(font, 400), menu);
+    return 0;
+}
+
 } // namespace
 
 int main(int argc, char** argv) {
@@ -129,6 +171,7 @@ int main(int argc, char** argv) {
         if (!std::strcmp(argv[1], "dat")) return cmdDat(argc, argv);
         if (!std::strcmp(argv[1], "levels")) return cmdLevels(argc, argv);
         if (!std::strcmp(argv[1], "gfx")) return cmdGfx(argc, argv);
+        if (!std::strcmp(argv[1], "main")) return cmdMain(argc, argv);
         std::fprintf(stderr, "unknown command %s\n", argv[1]);
     } catch (const std::exception& e) {
         std::fprintf(stderr, "error: %s\n", e.what());
