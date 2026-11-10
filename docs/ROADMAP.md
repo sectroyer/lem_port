@@ -47,7 +47,8 @@ SDL3 provides the window, input and sound on every target.
 2. [x] Portable macOS app (SDL built in, universal binary)
 3. [x] iOS finishing touches: fast-forward indicator, touch alternative for
        "prefer walkers", pause music in the background
-4. [ ] Linux build test
+4. [x] Linux build test (Kali arm64, GCC 13, system SDL3: builds without
+       warnings, all tests pass, output identical to macOS)
 5. [ ] More solution replays for the regression tests
 6. [ ] Browser version (WebAssembly)
 7. [ ] Remaining edge cases that need a memory dump of the original game

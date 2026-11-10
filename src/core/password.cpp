@@ -3,6 +3,7 @@
 
 #include <array>
 #include <cctype>
+#include <cstdint>
 
 namespace lem {
 

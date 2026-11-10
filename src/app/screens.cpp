@@ -350,7 +350,7 @@ bool Frontend::handleEvent(const SDL_Event& ev) {
 }
 
 void Frontend::selectSkill(int button) {
-    if (button >= BtnSkill0 && button < BtnSkill0 + SkillCount) {
+    if (button >= BtnSkill0 && button < int(BtnSkill0) + int(SkillCount)) {
         if (selected_ != button - BtnSkill0) audio_.sfx(SfxSkillSelect);
         selected_ = button - BtnSkill0;
     }
@@ -501,7 +501,7 @@ void Frontend::drawPanel() {
     drawPanelText(14, "OUT " + std::to_string(game_->lemmingsOut()));
     int total = std::max(1, game_->lemmingsTotal());
     drawPanelText(23, "IN " + std::to_string(game_->lemmingsIn() * 100 / total) + "%");
-    char t[16];
+    char t[32];
     std::snprintf(t, sizeof t, "%s %d-%02d", fast_ ? "FAST" : "TIME", std::max(0, game_->minutes()),
                   std::max(0, game_->seconds()));
     drawPanelText(31, t);

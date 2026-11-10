@@ -25,7 +25,7 @@ public:
     std::function<void(uint16_t port, uint8_t value)> out;
     std::function<uint8_t(uint16_t port)> in;
 
-    uint8_t& at(uint16_t seg, uint16_t off) { return mem[(uint32_t(seg) << 4) + off & 0xFFFFF]; }
+    uint8_t& at(uint16_t seg, uint16_t off) { return mem[((uint32_t(seg) << 4) + off) & 0xFFFFF]; }
     uint16_t read16(uint16_t seg, uint16_t off);
     void write16(uint16_t seg, uint16_t off, uint16_t v);
 
