@@ -2,6 +2,8 @@
 #include "screens.h"
 
 #include <SDL3/SDL_filesystem.h>
+#include <SDL3/SDL_keyboard.h>
+#include <SDL3/SDL_properties.h>
 #include <SDL3/SDL_stdinc.h>
 
 #include <algorithm>
@@ -52,7 +54,24 @@ void Frontend::suspend() {
 
 void Frontend::resume() { audio_.pauseOutput(false); }
 
+// Letters for the access code come from text input, which also brings up the
+// on-screen keyboard on touch devices.
+void Frontend::startTextInput() {
+    if (!window_) return;
+    SDL_PropertiesID props = SDL_CreateProperties();
+    SDL_SetNumberProperty(props, SDL_PROP_TEXTINPUT_TYPE_NUMBER, SDL_TEXTINPUT_TYPE_TEXT);
+    SDL_SetNumberProperty(props, SDL_PROP_TEXTINPUT_CAPITALIZATION_NUMBER, SDL_CAPITALIZE_LETTERS);
+    SDL_SetBooleanProperty(props, SDL_PROP_TEXTINPUT_AUTOCORRECT_BOOLEAN, false);
+    SDL_StartTextInputWithProperties(window_, props);
+    SDL_DestroyProperties(props);
+}
+
+void Frontend::stopTextInput() {
+    if (window_ && SDL_TextInputActive(window_)) SDL_StopTextInput(window_);
+}
+
 void Frontend::goToMenu() {
+    stopTextInput();
     if (game_) audio_.stop();
     game_.reset();
     codeTimer_ = 0;
@@ -71,6 +90,7 @@ void Frontend::menuSelect(int item) {
     case 0: loadLevel(rating_, level_); break;
     case 1:
         mode_ = Mode::Code;
+        startTextInput();
         codeInput_.clear();
         codeMessage_.clear();
         codeMessage2_.clear();
@@ -180,6 +200,13 @@ bool Frontend::handleEvent(const SDL_Event& ev) {
         }
         if (game_) game_->setCursor(cursorGameX(), cursorGameY(), rightDown_);
         break;
+    case SDL_EVENT_TEXT_INPUT:
+        if (mode_ == Mode::Code && codeTimer_ == 0)
+            for (const char* c = ev.text.text; *c; ++c) {
+                char u = char(std::toupper(uint8_t(*c)));
+                if (u >= 'A' && u <= 'Z' && codeInput_.size() < 10) codeInput_ += u;
+            }
+        break;
     case SDL_EVENT_FINGER_DOWN:
         ++fingers_;
         if (fingers_ >= 2) {
@@ -221,6 +248,7 @@ bool Frontend::handleEvent(const SDL_Event& ev) {
             goToMenu();
         } else if (mode_ == Mode::Code) {
             if (codeTimer_ > 0) goToMenu();
+            else startTextInput();   // bring the keyboard back if it was hidden
         } else if (mode_ == Mode::Preview) {
             startPlaying();
         } else if (mode_ == Mode::Result) {
@@ -276,7 +304,6 @@ bool Frontend::handleEvent(const SDL_Event& ev) {
             if (codeTimer_ > 0) { goToMenu(); break; }
             if (k == SDLK_ESCAPE) goToMenu();
             else if (k == SDLK_BACKSPACE && !codeInput_.empty()) codeInput_.pop_back();
-            else if (k >= SDLK_A && k <= SDLK_Z && codeInput_.size() < 10) codeInput_ += char('A' + (k - SDLK_A));
             else if (k == SDLK_RETURN && codeInput_.size() == 10) {
                 auto c = decodeAccessCode(codeInput_);
                 if (c && c->level < kRatings * kLevelsPerRating) {
@@ -286,6 +313,7 @@ bool Frontend::handleEvent(const SDL_Event& ev) {
                     codeMessage_ = "Code for Level " + std::to_string(level_ + 1);
                     codeMessage2_ = std::string("Rating ") + ratingName(rating_);
                     codeTimer_ = 120;
+                    stopTextInput();
                 } else {
                     codeMessage_ = "Incorrect Code";
                     codeMessage2_.clear();

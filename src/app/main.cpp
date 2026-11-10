@@ -55,6 +55,7 @@ void startGame(App& app) {
         int r = app.startRating >= 0 ? app.startRating : app.config.lastRating;
         int n = app.startRating >= 0 ? app.startLevel : app.config.lastLevel;
         app.frontend = std::make_unique<Frontend>(app.config.dataDir, r, n);
+        app.frontend->setWindow(app.window);
         app.frontend->setSound(app.config.music, app.config.sfx);
         if (app.autoPlay) app.frontend->startLevel();
         SDL_SetWindowTitle(app.window, "Lem_Port");

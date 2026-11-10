@@ -3,6 +3,7 @@
 #pragma once
 
 #include <SDL3/SDL_events.h>
+#include <SDL3/SDL_video.h>
 
 #include <cstdint>
 #include <memory>
@@ -28,6 +29,8 @@ class Frontend {
 public:
     explicit Frontend(const std::string& dataDir, int rating = 0, int level = 0);
     ~Frontend();
+    // Window used for the on-screen keyboard (code entry).
+    void setWindow(SDL_Window* w) { window_ = w; }
     // Returns false when the user wants to quit.
     bool handleEvent(const SDL_Event& ev);
     void update();                         // one 60 ms frame
@@ -126,6 +129,9 @@ private:
     std::string codeMessage2_;
     int codeTimer_ = 0;          // frames until the code screen returns to the menu
     bool quit_ = false;
+    SDL_Window* window_ = nullptr;
+    void startTextInput();
+    void stopTextInput();
 
     Bitmap levelFrame_;           // 1600x160 rendered level
     Bitmap play_;                 // 320x200 play screen
