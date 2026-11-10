@@ -104,6 +104,8 @@ They play the replays in `tests/replays` and check every level against
 
 On macOS with MacPorts, add `-DCMAKE_PREFIX_PATH=/opt/local` to the first
 command.
+If SDL3 is not installed (many Linux distributions do not package it yet),
+add `-DLEM_FETCH_SDL=ON` to download and build it.
 
 ## Playing
 
