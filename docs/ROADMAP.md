@@ -42,6 +42,12 @@ SDL3 provides the window, input and sound on every target.
       install script
 - [ ] WebAssembly build (Emscripten), data supplied by file picker
 
+## Version 1.0
+
+Complete game on macOS (universal app, macOS 11+), Linux and iOS/iPadOS
+12+: all 120 levels with the original rules, menus, access codes, music and
+sound effects. Not yet included: the browser version and Windows (untested).
+
 ## Next
 1. [x] iOS build and install instructions in the README
 2. [x] Portable macOS app (SDL built in, universal binary)

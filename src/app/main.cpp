@@ -113,7 +113,7 @@ void askForFolder(App& app) {
 SDL_AppResult SDL_AppInit(void** state, int argc, char** argv) {
     auto* app = new App;
     *state = app;
-    SDL_SetAppMetadata("Lem_Port", "0.1", "io.github.sectroyer.lemport");
+    SDL_SetAppMetadata("Lem_Port", "1.0", "io.github.sectroyer.lemport");
     if (!SDL_Init(SDL_INIT_VIDEO | SDL_INIT_AUDIO)) {
         SDL_Log("SDL_Init failed: %s", SDL_GetError());
         return SDL_APP_FAILURE;
