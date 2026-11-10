@@ -70,6 +70,12 @@ void Frontend::stopTextInput() {
     if (window_ && SDL_TextInputActive(window_)) SDL_StopTextInput(window_);
 }
 
+void Frontend::stepLevel(int delta) {
+    int i = (rating_ * kLevelsPerRating + level_ + delta + kRatings * kLevelsPerRating) %
+            (kRatings * kLevelsPerRating);
+    loadLevel(i / kLevelsPerRating, i % kLevelsPerRating);
+}
+
 void Frontend::goToMenu() {
     stopTextInput();
     if (game_) audio_.stop();
@@ -250,7 +256,9 @@ bool Frontend::handleEvent(const SDL_Event& ev) {
             if (codeTimer_ > 0) goToMenu();
             else startTextInput();   // bring the keyboard back if it was hidden
         } else if (mode_ == Mode::Preview) {
-            startPlaying();
+            // Decided on release: a tap starts the level, a swipe changes it.
+            previewPress_ = true;
+            previewDownX_ = mouseX_;
         } else if (mode_ == Mode::Result) {
             if (right) { goToMenu(); break; }
             if (result_.success) {
@@ -269,6 +277,15 @@ bool Frontend::handleEvent(const SDL_Event& ev) {
     case SDL_EVENT_MOUSE_BUTTON_UP:
         if (ev.button.button == SDL_BUTTON_RIGHT) rightDown_ = false;
         rrHeld_ = 0;
+        if (previewPress_) {
+            previewPress_ = false;
+            if (mode_ == Mode::Preview) {
+                int dx = std::clamp(int(ev.button.x), 0, kScreenW - 1) - previewDownX_;
+                if (dx <= -40) stepLevel(1);        // swipe left: next level
+                else if (dx >= 40) stepLevel(-1);   // swipe right: previous level
+                else startPlaying();
+            }
+        }
         if (touchPending_) {
             touchPending_ = false;
             if (!dragging_ && mode_ == Mode::Playing) {
@@ -325,15 +342,8 @@ bool Frontend::handleEvent(const SDL_Event& ev) {
         if (mode_ == Mode::Preview) {
             if (k == SDLK_ESCAPE) { goToMenu(); break; }
             // Level selection on the preview screen (not in the original).
-            if (k == SDLK_RIGHT || k == SDLK_DOWN) {
-                int n = level_ + 1, r = rating_;
-                if (n >= kLevelsPerRating) { n = 0; r = (r + 1) % kRatings; }
-                loadLevel(r, n);
-            } else if (k == SDLK_LEFT || k == SDLK_UP) {
-                int n = level_ - 1, r = rating_;
-                if (n < 0) { n = kLevelsPerRating - 1; r = (r + kRatings - 1) % kRatings; }
-                loadLevel(r, n);
-            } else if (k == SDLK_PAGEDOWN) {
+            if (k == SDLK_RIGHT || k == SDLK_DOWN) stepLevel(1);
+            else if (k == SDLK_LEFT || k == SDLK_UP) stepLevel(-1); else if (k == SDLK_PAGEDOWN) {
                 loadLevel((rating_ + 1) % kRatings, 0);
             } else if (k == SDLK_PAGEUP) {
                 loadLevel((rating_ + kRatings - 1) % kRatings, 0);
@@ -618,6 +628,7 @@ void Frontend::drawPreview() {
     drawMenuTextCentered(200, buf);
     drawMenuTextCentered(220, std::string("Rating  ") + ratingName(rating_));
     drawMenuTextCentered(272, "Press mouse button to continue");
+    drawMenuTextCentered(304, "Swipe or arrows: other levels");
 }
 
 void Frontend::drawResult() {

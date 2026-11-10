@@ -133,7 +133,7 @@ Main menu: F1 (or click the sign) plays, F2 enters an access code, F4 shows
 the controls, F3 cycles
 music + effects / effects only / silence, the arrow keys or the rating sign
 change the rating, Esc quits. On the level preview screen the arrow keys and
-Page Up/Down also choose any level. After a successful level the result screen
+Page Up/Down (on touch screens a swipe) also choose any level. After a successful level the result screen
 shows the access code for the next one; the right mouse button returns to the
 menu.
 

@@ -78,6 +78,7 @@ private:
     void menuSelect(int item);   // 0 play, 1 code, 2 sound, 3 rating, 4 exit
     void cycleSound();
     void goToMenu();
+    void stepLevel(int delta);   // next / previous level on the preview screen
 
     std::string dataDir_;
     LevelPack pack_;
@@ -121,6 +122,8 @@ private:
     bool dragging_ = false;
     int touchDownX_ = 0, touchDownY_ = 0, dragStartScroll_ = 0;
     int fingers_ = 0;
+    bool previewPress_ = false;   // preview: tap starts, swipe changes level
+    int previewDownX_ = 0;
     int touchDownFrame_ = 0;      // long press = right button (prefer walkers)
     GameResult result_{};
     int codeFlags_ = 0;           // carried from the last entered code
